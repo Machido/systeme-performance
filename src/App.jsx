@@ -16,11 +16,17 @@ const PRIO_COLOR = { Haute: "#E85555", Moyenne: "#E8A838", Basse: "#888" };
 const PROJECT_STATUSES = ["Potentiel", "En cours", "Terminé", "Abandonné"];
 const PROJECT_STATUS_COLOR = { Potentiel: "#aaa", "En cours": "#4A90D9", "Terminé": "#6BBF6B", "Abandonné": "#ccc" };
 const TEMPS = [
-  { score: 0, emoji: "😓", label: "En difficulté" },
-  { score: 1, emoji: "😐", label: "Plat" },
-  { score: 2, emoji: "🙂", label: "OK" },
-  { score: 3, emoji: "😊", label: "Bien" },
-  { score: 4, emoji: "😄", label: "Excellent" },
+  { score: 0, label: "Effondré" },
+  { score: 1, label: "Très difficile" },
+  { score: 2, label: "Difficile" },
+  { score: 3, label: "En difficulté" },
+  { score: 4, label: "Plat" },
+  { score: 5, label: "Neutre" },
+  { score: 6, label: "OK" },
+  { score: 7, label: "Bien" },
+  { score: 8, label: "Très bien" },
+  { score: 9, label: "Excellent" },
+  { score: 10, label: "Dans le flow" },
 ];
 
 const PERIODS = ["Q1", "Q2", "Q3", "Q4", "H1", "H2", "Annuel"];
@@ -88,7 +94,16 @@ const isOverdue = (due) => new Date(due) < today;
 const getDeptColor = (deptId) => DEPTS.find(d => d.id === deptId)?.color || "#888";
 const getDeptIcon = (deptId) => DEPTS.find(d => d.id === deptId)?.icon || "";
 const getDeptLabel = (deptId) => DEPTS.find(d => d.id === deptId)?.label || "Tous";
-const getTempEmoji = (score) => TEMPS.find(t => t.score === score)?.emoji || "🙂";
+const getTempLabel = (score) => TEMPS.find(t => t.score === Number(score))?.label || "";
+const getTempColor = (score) => {
+  const s = Number(score);
+  if (s <= 2) return "#E85555";
+  if (s <= 4) return "#E8A838";
+  if (s <= 6) return "#888";
+  if (s <= 8) return "#4A90D9";
+  return "#6BBF6B";
+};
+const getTempDisplay = (score) => score !== undefined && score !== null ? `${score}/10` : "—";
 
 export default function App() {
   const [tab, setTab] = useState("kanban");
@@ -278,7 +293,7 @@ export default function App() {
   };
 
   const todayTasks = tasks.filter(t => t.due === "2026-02-28" && t.status !== "Terminé" && t.status !== "Abandonné");
-  const recentTemp = journal.slice(0, 3).map(j => getTempEmoji(j.temp)).join(" ");
+  const recentTemp = journal.slice(0, 1).map(j => getTempDisplay(j.temp)).join(" ");
 
   const s = {
     app: { minHeight: "100vh", background: "#f5f5f5", color: "#222", fontFamily: "sans-serif", fontSize: 14 },
@@ -314,7 +329,7 @@ export default function App() {
     modal: { position: "fixed", inset: 0, background: "#00000044", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 },
     modalBox: { background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24, width: 440, maxHeight: "80vh", overflowY: "auto" },
     row: { display: "flex", gap: 10 },
-    tempBtn: (active) => ({ flex: 1, padding: "10px 6px", background: active ? "#f0eeff" : "#fafafa", border: active ? "1px solid #5b4ef8" : "1px solid #eee", borderRadius: 8, cursor: "pointer", fontSize: 28, transition: "all 0.1s" }),
+    tempSlider: { width: "100%", accentColor: "#5b4ef8", cursor: "pointer", height: 6, marginBottom: 4 },
     progressBar: () => ({ background: "#f0f0f0", borderRadius: 4, height: 6, position: "relative", overflow: "hidden" }),
     progressFill: (pct, color) => ({ width: `${Math.min(pct, 100)}%`, height: "100%", background: color, borderRadius: 4, transition: "width 0.3s" }),
     // Shared modal footer with optional delete button
@@ -392,7 +407,7 @@ export default function App() {
                           <span style={s.tag(getDeptColor(task.dept))}>{getDeptIcon(task.dept)}</span>
                           <span style={s.tag(PRIO_COLOR[task.priority])}>{task.priority}</span>
                           {isOverdue(task.due) && status !== "Terminé" && status !== "Abandonné" && <span style={s.tag("#E85555")}>⚠ Retard</span>}
-                          <span style={{ marginLeft: "auto", fontSize: 22 }}>{getTempEmoji(task.temp)}</span>
+                          <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 600, color: getTempColor(task.temp) }}>{getTempDisplay(task.temp)}</span>
                         </div>
                         <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>Échéance {task.due}</div>
                       </div>
@@ -723,7 +738,7 @@ export default function App() {
             {filteredJournal.map(j => (
               <div key={j.id} style={{ ...s.card, borderLeft: `3px solid ${getDeptColor(j.dept)}`, cursor: "pointer" }} onClick={() => openModal("journal", { ...j })}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                  <div><span style={{ fontSize: 13, color: "#222" }}>{j.title}</span><span style={{ marginLeft: 8, fontSize: 22 }}>{getTempEmoji(j.temp)}</span></div>
+                  <div><span style={{ fontSize: 13, color: "#222" }}>{j.title}</span><span style={{ marginLeft: 8, fontSize: 13, fontWeight: 600, color: getTempColor(j.temp) }}>{getTempDisplay(j.temp)}</span></div>
                   <span style={{ fontSize: 12, color: "#aaa" }}>{j.date}</span>
                 </div>
                 <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
@@ -760,7 +775,7 @@ export default function App() {
             }
             let display = val ?? "—";
             if (col.key === "dept") display = val === "all" ? "🌐" : (getDeptIcon(val) || val);
-            if (col.key === "temp") display = getTempEmoji(Number(val));
+            if (col.key === "temp") display = getTempDisplay(Number(val));
             if (col.key === "project" || col.key === "objectifRef") display = val || "—";
             if (col.type === "select" && col.options) { const opt = col.options.find(o => o.value === val); if (opt) display = opt.label; }
             return <span onClick={() => !col.readonly && startEdit(dataTab, row.id, col.key, val)} style={{ display: "block", minWidth: col.w, color: col.readonly ? "#ccc" : "#222" }} title={col.readonly ? "" : "Cliquer pour modifier"}>{String(display)}</span>;
@@ -849,7 +864,16 @@ export default function App() {
                   <div style={{ flex: 1 }}><label style={s.label}>Heures passées</label><input type="number" step="0.5" style={s.input} value={form.passedH || ""} onChange={e => setForm({ ...form, passedH: parseFloat(e.target.value) })} /></div>
                 </div>
                 <label style={s.label}>Température</label>
-                <div style={{ ...s.row, marginBottom: 10 }}>{TEMPS.map(t => <button key={t.score} style={s.tempBtn(form.temp === t.score)} onClick={() => setForm({ ...form, temp: t.score })} title={t.label}>{t.emoji}</button>)}</div>
+                <div style={{ marginBottom: 10 }}>
+                  <input type="range" min="0" max="10" step="1" style={s.tempSlider}
+                    value={form.temp ?? 5}
+                    onChange={e => setForm({ ...form, temp: Number(e.target.value) })} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#aaa" }}>
+                    <span>0 — Effondré</span>
+                    <span style={{ fontWeight: 600, color: getTempColor(form.temp ?? 5) }}>{form.temp ?? 5}/10 — {getTempLabel(form.temp ?? 5)}</span>
+                    <span>10 — Dans le flow</span>
+                  </div>
+                </div>
                 <label style={s.label}>Notes</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
                 <ModalFooter onDelete={form.id ? () => deleteRow("tasks", form.id) : null} onSave={saveTask} confirmMsg="Supprimer cette tâche ?" />
@@ -901,7 +925,16 @@ export default function App() {
                   <div style={{ flex: 1 }}><label style={s.label}>Objectif lié</label><select style={s.select} value={form.objectifRef || ""} onChange={e => setForm({ ...form, objectifRef: e.target.value })}><option value="">— Aucun —</option>{objectives.map(o => <option key={o.id} value={o.id}>{o.dept === "all" ? "🌐" : getDeptIcon(o.dept)} {o.name}</option>)}</select></div>
                 </div>
                 <label style={s.label}>Température</label>
-                <div style={{ ...s.row, marginBottom: 10 }}>{TEMPS.map(t => <button key={t.score} style={s.tempBtn(form.temp === t.score)} onClick={() => setForm({ ...form, temp: t.score })} title={t.label}>{t.emoji}</button>)}</div>
+                <div style={{ marginBottom: 10 }}>
+                  <input type="range" min="0" max="10" step="1" style={s.tempSlider}
+                    value={form.temp ?? 5}
+                    onChange={e => setForm({ ...form, temp: Number(e.target.value) })} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#aaa" }}>
+                    <span>0 — Effondré</span>
+                    <span style={{ fontWeight: 600, color: getTempColor(form.temp ?? 5) }}>{form.temp ?? 5}/10 — {getTempLabel(form.temp ?? 5)}</span>
+                    <span>10 — Dans le flow</span>
+                  </div>
+                </div>
                 <label style={s.label}>Prochaine action</label>
                 <input style={s.input} value={form.nextAction || ""} onChange={e => setForm({ ...form, nextAction: e.target.value })} placeholder="→ Que faire ensuite ?" />
                 <ModalFooter onDelete={form.id ? () => deleteRow("journal", form.id) : null} onSave={saveJournal} confirmMsg="Supprimer cette entrée journal ?" />

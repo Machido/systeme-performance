@@ -300,7 +300,7 @@ export default function App() {
     header: { borderBottom: "1px solid #eee", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", position: "sticky", top: 0, zIndex: 100 },
     logo: { fontSize: 22, fontWeight: 700, color: "#222" },
     deptBar: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" },
-    deptBtn: (active) => ({ padding: "8px 14px", borderRadius: 8, border: "1px solid #eee", background: active ? "#5b4ef8" : "#fafafa", color: active ? "#fff" : "#666", cursor: "pointer", fontSize: 15, fontFamily: "sans-serif", transition: "all 0.15s", fontWeight: active ? 600 : 400 }),
+    deptBtn: (active) => ({ padding: "8px 16px", borderRadius: 8, border: "1px solid #eee", background: active ? "#5b4ef8" : "#fafafa", color: active ? "#fff" : "#666", cursor: "pointer", fontSize: 15, fontFamily: "sans-serif", transition: "all 0.15s", fontWeight: active ? 600 : 400, display: "flex", alignItems: "center", gap: 6 }),
     tabs: { display: "flex", borderBottom: "1px solid #eee", padding: "0 24px", gap: 0, background: "#fff", overflowX: "auto" },
     tabBtn: (active) => ({ padding: "12px 16px", background: "none", border: "none", borderBottom: active ? "2px solid #5b4ef8" : "2px solid transparent", color: active ? "#5b4ef8" : "#aaa", cursor: "pointer", fontSize: 15, fontFamily: "sans-serif", fontWeight: active ? 600 : 400, transition: "all 0.15s", marginBottom: -1, whiteSpace: "nowrap" }),
     body: { padding: "24px" },
@@ -372,7 +372,8 @@ export default function App() {
           {DEPTS.map(d => (
             <button key={d.id} style={{ ...s.deptBtn(deptFilter === d.id), background: deptFilter === d.id ? d.color : "#fafafa", borderColor: deptFilter === d.id ? d.color : "#eee", color: deptFilter === d.id ? "#fff" : "#666" }}
               onClick={() => setDeptFilter(deptFilter === d.id ? "all" : d.id)}>
-              {d.icon} {d.label}
+              <span style={{ fontSize: 20 }}>{d.icon}</span>
+              <span>{d.label}</span>
             </button>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { supabase } from "./supabase.js";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar, LineChart, Line, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts";
 
 const DEPTS = [
@@ -23,12 +24,12 @@ const TEMPS = [
 ];
 
 const initialProjects = [
-  { id: "P001", name: "Refonte pitch coaching", dept: "sales", status: "En cours", desc: "Clarifier l'offre et le message clé", startDate: "2026-01-15", endDate: "2026-03-31", estHours: 20, revenue: 0, notes: "Focus sur la différenciation" },
-  { id: "P002", name: "Pipeline Q1 2026", dept: "sales", status: "En cours", desc: "Développer 5 nouvelles opportunités", startDate: "2026-01-01", endDate: "2026-03-31", estHours: 30, revenue: 15000, notes: "" },
-  { id: "P003", name: "Portefeuille investissement", dept: "ops", status: "En cours", desc: "Rebalancer et suivre les positions", startDate: "2026-02-01", endDate: "2026-04-30", estHours: 10, revenue: 0, notes: "Saxo Bank + Stockopedia" },
-  { id: "P004", name: "Livraison client Arnaud", dept: "prod", status: "En cours", desc: "Facturation architecte + livrables", startDate: "2026-01-20", endDate: "2026-02-20", estHours: 15, revenue: 3500, notes: "Facture impayée — relancer" },
-  { id: "P005", name: "Santé & sport", dept: "res", status: "En cours", desc: "Maintenir routine sportive 3x/semaine", startDate: "2026-01-01", endDate: "2026-12-31", estHours: 0, revenue: 0, notes: "" },
-  { id: "P006", name: "Nouveau service conseil", dept: "sales", status: "Potentiel", desc: "Explorer une offre conseil entreprises PME", startDate: "", endDate: "", estHours: 0, revenue: 8000, notes: "À qualifier en mars" },
+  { id: "P001", name: "Refonte pitch coaching", dept: "sales", status: "En cours", description: "Clarifier l'offre et le message clé", startDate: "2026-01-15", endDate: "2026-03-31", estHours: 20, revenue: 0, notes: "Focus sur la différenciation" },
+  { id: "P002", name: "Pipeline Q1 2026", dept: "sales", status: "En cours", description: "Développer 5 nouvelles opportunités", startDate: "2026-01-01", endDate: "2026-03-31", estHours: 30, revenue: 15000, notes: "" },
+  { id: "P003", name: "Portefeuille investissement", dept: "ops", status: "En cours", description: "Rebalancer et suivre les positions", startDate: "2026-02-01", endDate: "2026-04-30", estHours: 10, revenue: 0, notes: "Saxo Bank + Stockopedia" },
+  { id: "P004", name: "Livraison client Arnaud", dept: "prod", status: "En cours", description: "Facturation architecte + livrables", startDate: "2026-01-20", endDate: "2026-02-20", estHours: 15, revenue: 3500, notes: "Facture impayée — relancer" },
+  { id: "P005", name: "Santé & sport", dept: "res", status: "En cours", description: "Maintenir routine sportive 3x/semaine", startDate: "2026-01-01", endDate: "2026-12-31", estHours: 0, revenue: 0, notes: "" },
+  { id: "P006", name: "Nouveau service conseil", dept: "sales", status: "Potentiel", description: "Explorer une offre conseil entreprises PME", startDate: "", endDate: "", estHours: 0, revenue: 8000, notes: "À qualifier en mars" },
 ];
 
 const initialTasks = [
@@ -45,9 +46,9 @@ const initialTasks = [
 ];
 
 const initialJournal = [
-  { id: "J001", date: "2026-02-26", type: "💡 Idée", temp: 3, title: "Nouveau format atelier coaching", desc: "Format 2h intensif plutôt que sessions hebdo", project: "P001", dept: "sales", priority: "Haute", nextAction: "Tester avec un client existant" },
-  { id: "J002", date: "2026-02-25", type: "🚧 Obstacle", temp: 1, title: "Arnaud ne répond plus", desc: "3ème relance sans réponse — envisager courrier recommandé", project: "P004", dept: "prod", priority: "Haute", nextAction: "Appel direct vendredi" },
-  { id: "J003", date: "2026-02-24", type: "📝 Note", temp: 4, title: "Bonne session sport", desc: "Dans le flow — 45 min sans regarder l'heure", project: "P005", dept: "res", priority: "Basse", nextAction: "" },
+  { id: "J001", date: "2026-02-26", type: "💡 Idée", temp: 3, title: "Nouveau format atelier coaching", description: "Format 2h intensif plutôt que sessions hebdo", project: "P001", dept: "sales", priority: "Haute", nextAction: "Tester avec un client existant" },
+  { id: "J002", date: "2026-02-25", type: "🚧 Obstacle", temp: 1, title: "Arnaud ne répond plus", description: "3ème relance sans réponse — envisager courrier recommandé", project: "P004", dept: "prod", priority: "Haute", nextAction: "Appel direct vendredi" },
+  { id: "J003", date: "2026-02-24", type: "📝 Note", temp: 4, title: "Bonne session sport", description: "Dans le flow — 45 min sans regarder l'heure", project: "P005", dept: "res", priority: "Basse", nextAction: "" },
 ];
 
 const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -77,34 +78,35 @@ export default function App() {
   const [cellValue, setCellValue] = useState("");
   const [kanbanShowDone, setKanbanShowDone] = useState(false);
 
-  // ── LOAD from persistent storage on mount ──
+  // ── LOAD from Supabase on mount ──
   useEffect(() => {
     const load = async () => {
       try {
-        const [p, t, j] = await Promise.all([
-          window.storage.get("perf:projects"),
-          window.storage.get("perf:tasks"),
-          window.storage.get("perf:journal"),
+        const [{ data: p }, { data: t }, { data: j }] = await Promise.all([
+          supabase.from("projects").select("*"),
+          supabase.from("tasks").select("*"),
+          supabase.from("journal").select("*"),
         ]);
-        if (p) setProjects(JSON.parse(p.value));
-        if (t) setTasks(JSON.parse(t.value));
-        if (j) setJournal(JSON.parse(j.value));
-      } catch (e) {
-        // Storage empty or unavailable — use initial data
-      }
+        if (p?.length) setProjects(p);
+        if (t?.length) setTasks(t);
+        if (j?.length) setJournal(j);
+      } catch (e) {}
       setStorageReady(true);
     };
     load();
   }, []);
 
-  // ── SAVE to persistent storage whenever data changes ──
-  const save = useCallback(async (key, data) => {
-    try { await window.storage.set(key, JSON.stringify(data)); } catch (e) {}
-  }, []);
+  // ── SYNC helpers ──
+  const syncRecord = async (table, record) => {
+    try { await supabase.from(table).upsert(record); } catch (e) {}
+  };
+  const deleteRecord = async (table, id) => {
+    try { await supabase.from(table).delete().eq("id", id); } catch (e) {}
+  };
 
-  const updateProjects = (val) => { setProjects(val); save("perf:projects", val); };
-  const updateTasks = (val) => { setTasks(val); save("perf:tasks", val); };
-  const updateJournal = (val) => { setJournal(val); save("perf:journal", val); };
+  const updateProjects = (val) => setProjects(val);
+  const updateTasks = (val) => setTasks(val);
+  const updateJournal = (val) => setJournal(val);
 
   // ── Export CSV ──
   const exportCSV = (data, filename) => {
@@ -149,43 +151,53 @@ export default function App() {
 
   const saveTask = () => {
     if (!form.name) return;
-    let updated;
+    let updated, record;
     if (form.id) {
-      updated = tasks.map(t => t.id === form.id ? { ...t, ...form } : t);
+      record = { ...tasks.find(t => t.id === form.id), ...form };
+      updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
       const id = "T" + String(tasks.length + 1).padStart(3, "0");
-      updated = [...tasks, { ...form, id, passedH: 0, temp: 2, status: form.status || "À faire" }];
+      record = { ...form, id, passedH: 0, temp: form.temp ?? 2, status: form.status || "À faire" };
+      updated = [...tasks, record];
     }
     updateTasks(updated);
+    syncRecord("tasks", record);
     setShowModal(null);
   };
 
   const saveJournal = () => {
     if (!form.title) return;
     const id = "J" + String(journal.length + 1).padStart(3, "0");
-    const updated = [{ ...form, id, date: new Date().toISOString().split("T")[0] }, ...journal];
+    const record = { ...form, id, date: new Date().toISOString().split("T")[0] };
+    const updated = [record, ...journal];
     updateJournal(updated);
+    syncRecord("journal", record);
     setShowModal(null);
   };
 
   const saveProject = () => {
     if (!form.name) return;
-    let updated;
+    let updated, record;
     if (form.id) {
-      updated = projects.map(p => p.id === form.id ? { ...p, ...form } : p);
+      record = { ...projects.find(p => p.id === form.id), ...form };
+      updated = projects.map(p => p.id === form.id ? record : p);
     } else {
       const id = "P" + String(projects.length + 1).padStart(3, "0");
-      updated = [...projects, { ...form, id }];
+      record = { ...form, id };
+      updated = [...projects, record];
     }
     updateProjects(updated);
+    syncRecord("projects", record);
     setShowModal(null);
   };
 
   const onDragStart = (taskId) => setDragging(taskId);
   const onDrop = (status) => {
     if (!dragging) return;
+    const task = tasks.find(t => t.id === dragging);
     const updated = tasks.map(t => t.id === dragging ? { ...t, status } : t);
     updateTasks(updated);
+    syncRecord("tasks", { ...task, status });
     setDragging(null);
   };
 
@@ -198,14 +210,17 @@ export default function App() {
     if (!editingCell) return;
     const { table, id, field } = editingCell;
     if (table === "projects") {
-      const updated = projects.map(p => p.id === id ? { ...p, [field]: cellValue } : p);
-      updateProjects(updated);
+      const record = { ...projects.find(p => p.id === id), [field]: cellValue };
+      updateProjects(projects.map(p => p.id === id ? record : p));
+      syncRecord("projects", record);
     } else if (table === "tasks") {
-      const updated = tasks.map(t => t.id === id ? { ...t, [field]: cellValue } : t);
-      updateTasks(updated);
+      const record = { ...tasks.find(t => t.id === id), [field]: cellValue };
+      updateTasks(tasks.map(t => t.id === id ? record : t));
+      syncRecord("tasks", record);
     } else if (table === "journal") {
-      const updated = journal.map(j => j.id === id ? { ...j, [field]: cellValue } : j);
-      updateJournal(updated);
+      const record = { ...journal.find(j => j.id === id), [field]: cellValue };
+      updateJournal(journal.map(j => j.id === id ? record : j));
+      syncRecord("journal", record);
     }
     setEditingCell(null);
   };
@@ -213,6 +228,7 @@ export default function App() {
     if (table === "projects") updateProjects(projects.filter(p => p.id !== id));
     else if (table === "tasks") updateTasks(tasks.filter(t => t.id !== id));
     else if (table === "journal") updateJournal(journal.filter(j => j.id !== id));
+    deleteRecord(table, id);
   };
 
   const todayTasks = tasks.filter(t => t.due === todayStr && t.status !== "Terminé" && t.status !== "Abandonné");
@@ -422,7 +438,7 @@ export default function App() {
                             {p.revenue > 0 && <span style={{ fontSize: 12, color: "#6BBF6B", fontWeight: 600 }}>€{p.revenue.toLocaleString()}</span>}
                           </div>
                         </div>
-                        {p.desc && <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{p.desc}</div>}
+                        {p.description && <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{p.description}</div>}
                         {projTasks.length > 0 && (
                           <div style={{ marginBottom: 6 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -660,7 +676,7 @@ export default function App() {
                   <span style={s.tag("#555")}>{j.type}</span>
                   {j.priority === "Haute" && <span style={s.tag(PRIO_COLOR.Haute)}>Haute</span>}
                 </div>
-                {j.desc && <div style={{ fontSize: 13, color: "#666", marginBottom: j.nextAction ? 6 : 0, lineHeight: 1.5 }}>{j.desc}</div>}
+                {j.description && <div style={{ fontSize: 13, color: "#666", marginBottom: j.nextAction ? 6 : 0, lineHeight: 1.5 }}>{j.description}</div>}
                 {j.nextAction && <div style={{ fontSize: 12, color: "#5b4ef8" }}>→ {j.nextAction}</div>}
               </div>
             ))}
@@ -713,7 +729,7 @@ export default function App() {
                 { key: "dept", label: "Dept", w: 70, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon })) },
                 { key: "temp", label: "Temp", w: 60, type: "number" },
                 { key: "priority", label: "Priorité", w: 80, type: "select", options: PRIORITIES.map(p => ({ value: p, label: p })) },
-                { key: "desc", label: "Description", w: 200 },
+                { key: "description", label: "Description", w: 200 },
                 { key: "nextAction", label: "Prochaine action", w: 160 },
               ],
             },
@@ -915,7 +931,7 @@ export default function App() {
                 <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nom court et descriptif…" />
 
                 <label style={s.label}>Description</label>
-                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.desc || ""} onChange={e => setForm({ ...form, desc: e.target.value })} placeholder="Pourquoi ce projet existe…" />
+                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Pourquoi ce projet existe…" />
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
@@ -975,7 +991,7 @@ export default function App() {
                 <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots…" />
 
                 <label style={s.label}>Description</label>
-                <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.desc || ""} onChange={e => setForm({ ...form, desc: e.target.value })} />
+                <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

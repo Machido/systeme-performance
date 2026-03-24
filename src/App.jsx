@@ -156,7 +156,7 @@ export default function App() {
       record = { ...tasks.find(t => t.id === form.id), ...form };
       updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
-      const id = "T" + String(tasks.length + 1).padStart(3, "0");
+      const id = "T" + Date.now();
       record = { ...form, id, passedH: 0, temp: form.temp ?? 2, status: form.status || "À faire" };
       updated = [...tasks, record];
     }
@@ -167,7 +167,7 @@ export default function App() {
 
   const saveJournal = () => {
     if (!form.title) return;
-    const id = "J" + String(journal.length + 1).padStart(3, "0");
+    const id = "J" + Date.now();
     const record = { ...form, id, date: new Date().toISOString().split("T")[0] };
     const updated = [record, ...journal];
     updateJournal(updated);
@@ -182,7 +182,7 @@ export default function App() {
       record = { ...projects.find(p => p.id === form.id), ...form };
       updated = projects.map(p => p.id === form.id ? record : p);
     } else {
-      const id = "P" + String(projects.length + 1).padStart(3, "0");
+      const id = "P" + Date.now();
       record = { ...form, id };
       updated = [...projects, record];
     }
@@ -273,6 +273,7 @@ export default function App() {
     modalBox: { background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24, width: 440, maxHeight: "80vh", overflowY: "auto" },
     row: { display: "flex", gap: 10 },
     tempBtn: (active) => ({ flex: 1, padding: "8px 4px", background: active ? "#f0eeff" : "#fafafa", border: active ? "1px solid #5b4ef8" : "1px solid #eee", borderRadius: 8, cursor: "pointer", fontSize: 18, transition: "all 0.1s" }),
+    btnDanger: { padding: "8px 16px", borderRadius: 8, border: "1px solid #ffd0d0", background: "#fff5f5", color: "#E85555", cursor: "pointer", fontSize: 14, fontFamily: "sans-serif" },
   };
 
   return (
@@ -918,9 +919,14 @@ export default function App() {
                 <label style={s.label}>Notes</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
 
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
-                  <button style={s.btn("primary")} onClick={saveTask}>Enregistrer</button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    {form.id && <button style={s.btnDanger} onClick={() => { if (window.confirm("Supprimer cette tâche ?")) { deleteRow("tasks", form.id); setShowModal(null); } }}>🗑 Supprimer</button>}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
+                    <button style={s.btn("primary")} onClick={saveTask}>Enregistrer</button>
+                  </div>
                 </div>
               </>
             )}
@@ -973,9 +979,14 @@ export default function App() {
                 <label style={s.label}>Notes</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Contexte, blocages, prochaines étapes…" />
 
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
-                  <button style={s.btn("primary")} onClick={saveProject}>Enregistrer</button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    {form.id && <button style={s.btnDanger} onClick={() => { if (window.confirm("Supprimer ce projet ?")) { deleteRow("projects", form.id); setShowModal(null); } }}>🗑 Supprimer</button>}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
+                    <button style={s.btn("primary")} onClick={saveProject}>Enregistrer</button>
+                  </div>
                 </div>
               </>
             )}
@@ -1018,9 +1029,14 @@ export default function App() {
                 <label style={s.label}>Prochaine action</label>
                 <input style={s.input} value={form.nextAction || ""} onChange={e => setForm({ ...form, nextAction: e.target.value })} placeholder="→ Que faire ensuite ?" />
 
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
-                  <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    {form.id && <button style={s.btnDanger} onClick={() => { if (window.confirm("Supprimer cette entrée ?")) { deleteRow("journal", form.id); setShowModal(null); } }}>🗑 Supprimer</button>}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
+                    <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
+                  </div>
                 </div>
               </>
             )}

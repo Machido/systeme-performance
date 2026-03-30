@@ -29,7 +29,8 @@ create table if not exists tasks (
   "estH" numeric default 0,
   "passedH" numeric default 0,
   temp integer default 2,
-  notes text default ''
+  notes text default '',
+  "completedDate" text default null
 );
 
 -- Journal
@@ -37,14 +38,13 @@ create table if not exists journal (
   id text primary key,
   date text not null,
   type text not null default '📝 Note',
-  temp integer default 2,
+  temp integer default 5,
   title text not null,
-  "desc" text default '',
+  description text default '',
   project text default '',
   dept text not null,
   priority text default 'Moyenne',
-  "nextAction" text default '',
-  "objectifRef" text default ''
+  "linkedTask" text default null
 );
 
 -- Objectives

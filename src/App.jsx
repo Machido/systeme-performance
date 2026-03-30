@@ -109,6 +109,10 @@ export default function App() {
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
   const [completionJournal, setCompletionJournal] = useState(null); // {task, project, dept} when completing a task
+  const [journalProjectFilter, setJournalProjectFilter] = useState("all");
+  const [journalDeptFilter, setJournalDeptFilter] = useState("all");
+  const [journalTypeFilter, setJournalTypeFilter] = useState("all");
+  const [journalScoreFilter, setJournalScoreFilter] = useState("all");
 
   // ── LOAD from Supabase on mount ──
   useEffect(() => {
@@ -781,13 +785,49 @@ export default function App() {
         })()}
 
         {/* ── JOURNAL ── */}
-        {tab === "journal" && (
+        {tab === "journal" && (() => {
+          let journalList = journal;
+          if (journalDeptFilter !== "all") journalList = journalList.filter(j => j.dept === journalDeptFilter);
+          if (journalProjectFilter !== "all") journalList = journalList.filter(j => j.project === journalProjectFilter);
+          if (journalTypeFilter !== "all") journalList = journalList.filter(j => j.type === journalTypeFilter);
+          if (journalScoreFilter !== "all") journalList = journalList.filter(j => j.temp === Number(journalScoreFilter));
+
+          return (
           <div style={{ maxWidth: 680 }}>
-            <div style={s.sectionTitle}>
-              <span>JOURNAL</span>
-              <button style={s.btn("primary")} onClick={() => openModal("journal", { type: "📝 Note", temp: 2, dept: deptFilter === "all" ? "ops" : deptFilter, priority: "Moyenne" })}>+ Entrée</button>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
+              <div>
+                <label style={s.label}>Projet</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 160 }} value={journalProjectFilter} onChange={e => setJournalProjectFilter(e.target.value)}>
+                  <option value="all">Tous les projets</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Département</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={journalDeptFilter} onChange={e => setJournalDeptFilter(e.target.value)}>
+                  <option value="all">Tous</option>
+                  {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Type</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 130 }} value={journalTypeFilter} onChange={e => setJournalTypeFilter(e.target.value)}>
+                  <option value="all">Tous</option>
+                  {["📝 Note", "💡 Idée", "🚧 Obstacle"].map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Score</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 100 }} value={journalScoreFilter} onChange={e => setJournalScoreFilter(e.target.value)}>
+                  <option value="all">Tous</option>
+                  {TEMPS.map(t => <option key={t.score} value={t.score}>{t.emoji} {t.score}</option>)}
+                </select>
+              </div>
+              <div style={{ marginLeft: "auto" }}>
+                <button style={s.btn("primary")} onClick={() => openModal("journal", { type: "📝 Note", temp: 5, dept: journalDeptFilter === "all" ? "ops" : journalDeptFilter, priority: "Moyenne" })}>+ Entrée</button>
+              </div>
             </div>
-            {filteredJournal.map(j => {
+            {journalList.map(j => {
               const linkedTask = j.linkedTask ? tasks.find(t => t.id === j.linkedTask) : null;
               return (
                 <div key={j.id} style={{ ...s.card, borderLeft: `3px solid ${getDeptColor(j.dept)}`, cursor: "pointer" }}
@@ -810,7 +850,8 @@ export default function App() {
               );
             })}
           </div>
-        )}
+          );
+        })()}
 
         {/* ── DONNÉES ── */}
         {tab === "data" && (() => {

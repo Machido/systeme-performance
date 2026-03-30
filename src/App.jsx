@@ -1101,7 +1101,10 @@ export default function App() {
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    {form.id && <button style={s.btnDanger} onClick={() => { if (window.confirm("Supprimer cette tâche ?")) { deleteRow("tasks", form.id); setShowModal(null); } }}>🗑 Supprimer</button>}
+                    {form.id && <>
+                      <button style={s.btnDanger} onClick={() => { if (window.confirm("Supprimer cette tâche ?")) { deleteRow("tasks", form.id); setShowModal(null); } }}>🗑 Supprimer</button>
+                      <button style={s.btn("ghost")} onClick={() => setForm({ ...form, id: undefined, name: form.name + " (copie)" })}>📋 Dupliquer</button>
+                    </>}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>

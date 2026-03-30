@@ -150,10 +150,16 @@ export default function App() {
 
   // ── SYNC helpers ──
   const syncRecord = async (table, record) => {
-    try { await supabase.from(table).upsert(record); } catch (e) {}
+    try {
+      const { error } = await supabase.from(table).upsert(record);
+      if (error) console.error(`Sync error (${table}):`, error.message);
+    } catch (e) { console.error(`Sync exception (${table}):`, e); }
   };
   const deleteRecord = async (table, id) => {
-    try { await supabase.from(table).delete().eq("id", id); } catch (e) {}
+    try {
+      const { error } = await supabase.from(table).delete().eq("id", id);
+      if (error) console.error(`Delete error (${table}):`, error.message);
+    } catch (e) { console.error(`Delete exception (${table}):`, e); }
   };
 
   const updateProjects = (val) => setProjects(val);

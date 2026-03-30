@@ -16,11 +16,17 @@ const PRIO_COLOR = { Haute: "#E85555", Moyenne: "#E8A838", Basse: "#888" };
 const PROJECT_STATUSES = ["Potentiel", "En cours", "Terminé", "Abandonné"];
 const PROJECT_STATUS_COLOR = { Potentiel: "#aaa", "En cours": "#4A90D9", "Terminé": "#6BBF6B", "Abandonné": "#ccc" };
 const TEMPS = [
-  { score: 0, emoji: "😓", label: "En difficulté" },
-  { score: 1, emoji: "😐", label: "Plat" },
-  { score: 2, emoji: "🙂", label: "OK" },
-  { score: 3, emoji: "😊", label: "Bien" },
-  { score: 4, emoji: "😄", label: "Excellent" },
+  { score: 0, emoji: "💀", label: "Catastrophe" },
+  { score: 1, emoji: "😫", label: "Très dur" },
+  { score: 2, emoji: "😓", label: "Difficile" },
+  { score: 3, emoji: "😟", label: "Compliqué" },
+  { score: 4, emoji: "😐", label: "Plat" },
+  { score: 5, emoji: "🙂", label: "OK" },
+  { score: 6, emoji: "😊", label: "Bien" },
+  { score: 7, emoji: "😄", label: "Très bien" },
+  { score: 8, emoji: "😁", label: "Super" },
+  { score: 9, emoji: "🤩", label: "Excellent" },
+  { score: 10, emoji: "🚀", label: "Parfait" },
 ];
 
 const initialProjects = [
@@ -102,6 +108,7 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
+  const [completionJournal, setCompletionJournal] = useState(null); // {task, project, dept} when completing a task
 
   // ── LOAD from Supabase on mount ──
   useEffect(() => {
@@ -177,27 +184,38 @@ export default function App() {
   const saveTask = () => {
     if (!form.name) return;
     let updated, record;
+    const wasCompleted = form.id && tasks.find(t => t.id === form.id)?.status !== "Terminé" && form.status === "Terminé";
     if (form.id) {
       record = { ...tasks.find(t => t.id === form.id), ...form };
       updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
       const id = "T" + Date.now();
-      record = { ...form, id, passedH: 0, temp: form.temp ?? 2, status: form.status || "À faire" };
+      record = { ...form, id, passedH: 0, temp: form.temp ?? 5, status: form.status || "À faire" };
       updated = [...tasks, record];
     }
     updateTasks(updated);
     syncRecord("tasks", record);
     setShowModal(null);
+    if (wasCompleted) {
+      setCompletionJournal({ taskId: record.id, taskName: record.name, project: record.project, dept: record.dept });
+      setForm({ type: "📝 Note", temp: 5, dept: record.dept, project: record.project, priority: "Moyenne", title: "", description: "" });
+    }
   };
 
   const saveJournal = () => {
     if (!form.title) return;
     const id = "J" + Date.now();
     const record = { ...form, id, date: new Date().toISOString().split("T")[0] };
+    if (completionJournal) {
+      record.project = completionJournal.project;
+      record.dept = completionJournal.dept;
+      record.linkedTask = completionJournal.taskId;
+    }
     const updated = [record, ...journal];
     updateJournal(updated);
     syncRecord("journal", record);
     setShowModal(null);
+    setCompletionJournal(null);
   };
 
   const saveProject = () => {
@@ -435,7 +453,6 @@ export default function App() {
                             <span style={s.tag(PRIO_COLOR[task.priority])}>{task.priority}</span>
                             <span style={s.tag("#555")}>{STATUS_ICONS[task.status]} {task.status}</span>
                             {isOverdue(task.due) && task.status !== "Terminé" && task.status !== "Abandonné" && <span style={s.tag("#E85555")}>⚠ Retard</span>}
-                            <span style={{ marginLeft: "auto", fontSize: 14 }}>{getTempEmoji(task.temp)}</span>
                           </div>
                           <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>Échéance {task.due || "—"}</div>
                         </div>
@@ -779,8 +796,7 @@ export default function App() {
                   <span style={s.tag("#555")}>{j.type}</span>
                   {j.priority === "Haute" && <span style={s.tag(PRIO_COLOR.Haute)}>Haute</span>}
                 </div>
-                {j.description && <div style={{ fontSize: 13, color: "#666", marginBottom: j.nextAction ? 6 : 0, lineHeight: 1.5 }}>{j.description}</div>}
-                {j.nextAction && <div style={{ fontSize: 12, color: "#5b4ef8" }}>→ {j.nextAction}</div>}
+                {j.description && <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>{j.description}</div>}
               </div>
             ))}
           </div>
@@ -1011,13 +1027,6 @@ export default function App() {
                   </div>
                 </div>
 
-                <label style={s.label}>Température</label>
-                <div style={{ ...s.row, marginBottom: 10 }}>
-                  {TEMPS.map(t => (
-                    <button key={t.score} style={s.tempBtn(form.temp === t.score)} onClick={() => setForm({ ...form, temp: t.score })} title={t.label}>{t.emoji}</button>
-                  ))}
-                </div>
-
                 <label style={s.label}>Notes</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} />
 
@@ -1121,15 +1130,12 @@ export default function App() {
                   </div>
                 </div>
 
-                <label style={s.label}>Température</label>
-                <div style={{ ...s.row, marginBottom: 10 }}>
+                <label style={s.label}>Température (0-10)</label>
+                <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
                   {TEMPS.map(t => (
-                    <button key={t.score} style={s.tempBtn(form.temp === t.score)} onClick={() => setForm({ ...form, temp: t.score })} title={t.label}>{t.emoji}</button>
+                    <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
                   ))}
                 </div>
-
-                <label style={s.label}>Prochaine action</label>
-                <input style={s.input} value={form.nextAction || ""} onChange={e => setForm({ ...form, nextAction: e.target.value })} placeholder="→ Que faire ensuite ?" />
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -1142,6 +1148,47 @@ export default function App() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── COMPLETION JOURNAL MODAL ── */}
+      {completionJournal && (
+        <div style={s.modal} onClick={e => e.target === e.currentTarget && setCompletionJournal(null)}>
+          <div style={s.modalBox}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
+                ✅ Tâche terminée — Capturer une note ?
+              </div>
+              <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => setCompletionJournal(null)}>×</button>
+            </div>
+
+            <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
+              📋 {completionJournal.taskName}
+            </div>
+
+            <label style={s.label}>Type</label>
+            <select style={s.select} value={form.type || "📝 Note"} onChange={e => setForm({ ...form, type: e.target.value })}>
+              {["📝 Note", "💡 Idée", "🚧 Obstacle"].map(t => <option key={t}>{t}</option>)}
+            </select>
+
+            <label style={s.label}>Titre</label>
+            <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots…" />
+
+            <label style={s.label}>Description</label>
+            <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Qu'avez-vous appris ? Que retenir ?" />
+
+            <label style={s.label}>Température (0-10)</label>
+            <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
+              {TEMPS.map(t => (
+                <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button style={s.btn("ghost")} onClick={() => setCompletionJournal(null)}>Passer</button>
+              <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
+            </div>
           </div>
         </div>
       )}

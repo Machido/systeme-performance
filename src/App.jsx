@@ -292,6 +292,11 @@ export default function App() {
         </div>
       </div>
 
+      {/* Hello Martin */}
+      <div style={{ textAlign: "center", padding: "32px 24px 16px", background: "#fff" }}>
+        <h1 style={{ fontSize: 36, fontWeight: 800, color: "#222", margin: 0 }}>Hello Martin 👋</h1>
+      </div>
+
       {/* Tabs */}
       <div style={s.tabs}>
         {[["kanban", "🗂 Kanban"], ["home", "🏠 Accueil"], ["projects", "📁 Projets"], ["dashboard", "📊 Dashboard"], ["journal", "📝 Journal"], ["data", "🗄 Données"]].map(([id, label]) => (

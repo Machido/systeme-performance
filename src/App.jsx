@@ -204,14 +204,19 @@ export default function App() {
 
   const saveJournal = () => {
     if (!form.title) return;
-    const id = "J" + Date.now();
-    const record = { ...form, id, date: new Date().toISOString().split("T")[0] };
+    let updated, record;
     if (completionJournal) {
-      record.project = completionJournal.project;
-      record.dept = completionJournal.dept;
-      record.linkedTask = completionJournal.taskId;
+      const id = "J" + Date.now();
+      record = { ...form, id, date: new Date().toISOString().split("T")[0], project: completionJournal.project, dept: completionJournal.dept, linkedTask: completionJournal.taskId };
+      updated = [record, ...journal];
+    } else if (form.id) {
+      record = { ...journal.find(j => j.id === form.id), ...form };
+      updated = journal.map(j => j.id === form.id ? record : j);
+    } else {
+      const id = "J" + Date.now();
+      record = { ...form, id, date: new Date().toISOString().split("T")[0] };
+      updated = [record, ...journal];
     }
-    const updated = [record, ...journal];
     updateJournal(updated);
     syncRecord("journal", record);
     setShowModal(null);
@@ -782,23 +787,28 @@ export default function App() {
               <span>JOURNAL</span>
               <button style={s.btn("primary")} onClick={() => openModal("journal", { type: "📝 Note", temp: 2, dept: deptFilter === "all" ? "ops" : deptFilter, priority: "Moyenne" })}>+ Entrée</button>
             </div>
-            {filteredJournal.map(j => (
-              <div key={j.id} style={{ ...s.card, borderLeft: `3px solid ${getDeptColor(j.dept)}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                  <div>
-                    <span style={{ fontSize: 13, color: "#222" }}>{j.title}</span>
-                    <span style={{ marginLeft: 8, fontSize: 14 }}>{getTempEmoji(j.temp)}</span>
+            {filteredJournal.map(j => {
+              const linkedTask = j.linkedTask ? tasks.find(t => t.id === j.linkedTask) : null;
+              return (
+                <div key={j.id} style={{ ...s.card, borderLeft: `3px solid ${getDeptColor(j.dept)}`, cursor: "pointer" }}
+                  onClick={() => openModal("journal", { ...j })}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div>
+                      <span style={{ fontSize: 13, color: "#222" }}>{j.title}</span>
+                      <span style={{ marginLeft: 8, fontSize: 14 }}>{getTempEmoji(j.temp)}</span>
+                    </div>
+                    <span style={{ fontSize: 12, color: "#aaa" }}>{j.date}</span>
                   </div>
-                  <span style={{ fontSize: 12, color: "#aaa" }}>{j.date}</span>
+                  <div style={{ display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={s.tag(getDeptColor(j.dept))}>{getDeptIcon(j.dept)}</span>
+                    <span style={s.tag("#555")}>{j.type}</span>
+                    {j.priority === "Haute" && <span style={s.tag(PRIO_COLOR.Haute)}>Haute</span>}
+                    {linkedTask && <span style={s.tag("#5b4ef8")}>📋 {linkedTask.name}</span>}
+                  </div>
+                  {j.description && <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>{j.description}</div>}
                 </div>
-                <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-                  <span style={s.tag(getDeptColor(j.dept))}>{getDeptIcon(j.dept)}</span>
-                  <span style={s.tag("#555")}>{j.type}</span>
-                  {j.priority === "Haute" && <span style={s.tag(PRIO_COLOR.Haute)}>Haute</span>}
-                </div>
-                {j.description && <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>{j.description}</div>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -967,7 +977,7 @@ export default function App() {
           <div style={s.modalBox}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                {showModal === "task" ? (form.id ? "Modifier tâche" : "Nouvelle tâche") : showModal === "journal" ? "Nouvelle entrée journal" : showModal === "project" ? (form.id ? "Modifier projet" : "Nouveau projet") : ""}
+                {showModal === "task" ? (form.id ? "Modifier tâche" : "Nouvelle tâche") : showModal === "journal" ? (form.id ? "Modifier entrée journal" : "Nouvelle entrée journal") : showModal === "project" ? (form.id ? "Modifier projet" : "Nouveau projet") : ""}
               </div>
               <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => setShowModal(null)}>×</button>
             </div>

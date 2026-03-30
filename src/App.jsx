@@ -82,6 +82,22 @@ const getDeadlineCol = (due) => {
   return "later";
 };
 
+// Target dates when dragging to a column
+const fridayThisWeek = new Date(today);
+fridayThisWeek.setDate(fridayThisWeek.getDate() + (5 - fridayThisWeek.getDay() + 7) % 7 || 7);
+const fridayStr = fridayThisWeek.toISOString().split("T")[0];
+const nextMonday = new Date(today);
+nextMonday.setDate(nextMonday.getDate() + (8 - nextMonday.getDay()) % 7 || 7);
+const nextMondayStr = nextMonday.toISOString().split("T")[0];
+
+const getDropDate = (colId) => {
+  if (colId === "today") return todayStr;
+  if (colId === "tomorrow") return tomorrowStr;
+  if (colId === "week") return fridayStr;
+  if (colId === "later") return nextMondayStr;
+  return todayStr;
+};
+
 const formatTodayLabel = () => {
   return today.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }).toUpperCase();
 };
@@ -188,13 +204,17 @@ export default function App() {
   const saveTask = () => {
     if (!form.name) return;
     let updated, record;
-    const wasCompleted = form.id && tasks.find(t => t.id === form.id)?.status !== "Terminé" && form.status === "Terminé";
+    const prevStatus = form.id ? tasks.find(t => t.id === form.id)?.status : null;
+    const wasCompleted = form.id && prevStatus !== "Terminé" && form.status === "Terminé";
     if (form.id) {
       record = { ...tasks.find(t => t.id === form.id), ...form };
+      if (wasCompleted) record.completedDate = todayStr;
+      if (prevStatus === "Terminé" && form.status !== "Terminé") record.completedDate = null;
       updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
       const id = "T" + Date.now();
       record = { ...form, id, passedH: 0, temp: form.temp ?? 5, status: form.status || "À faire" };
+      if (form.status === "Terminé") record.completedDate = todayStr;
       updated = [...tasks, record];
     }
     updateTasks(updated);
@@ -268,18 +288,32 @@ export default function App() {
     if (targetId !== dragging) setDragOverId(targetId);
   };
 
-  const onKanbanDrop = () => {
-    if (!dragging || !dragOverId || dragging === dragOverId) {
-      setDragging(null);
-      setDragOverId(null);
-      return;
+  const onKanbanDrop = (targetColId) => {
+    if (!dragging) { setDragOverId(null); return; }
+    const task = tasks.find(t => t.id === dragging);
+    if (!task) { setDragging(null); setDragOverId(null); return; }
+
+    const currentCol = getDeadlineCol(task.due);
+
+    // Cross-column: update due date
+    if (currentCol !== targetColId) {
+      const newDue = getDropDate(targetColId);
+      const record = { ...task, due: newDue };
+      const updated = tasks.map(t => t.id === dragging ? record : t);
+      updateTasks(updated);
+      syncRecord("tasks", record);
     }
-    setKanbanOrder(prev => {
-      const newOrder = prev.filter(id => id !== dragging);
-      const targetIdx = newOrder.indexOf(dragOverId);
-      newOrder.splice(targetIdx, 0, dragging);
-      return newOrder;
-    });
+
+    // Within-column reorder
+    if (dragOverId && dragging !== dragOverId) {
+      setKanbanOrder(prev => {
+        const newOrder = prev.filter(id => id !== dragging);
+        const targetIdx = newOrder.indexOf(dragOverId);
+        newOrder.splice(targetIdx, 0, dragging);
+        return newOrder;
+      });
+    }
+
     setDragging(null);
     setDragOverId(null);
   };
@@ -439,7 +473,7 @@ export default function App() {
                   return (
                     <div key={col.id} style={s.kanbanCol}
                       onDragOver={e => e.preventDefault()}
-                      onDrop={onKanbanDrop}>
+                      onDrop={() => onKanbanDrop(col.id)}>
                       <div style={s.kanbanColHeader}>
                         {col.icon} {col.label} <span style={{ color: "#333", marginLeft: 4 }}>({colTasks.length})</span>
                       </div>
@@ -1084,6 +1118,12 @@ export default function App() {
                     <input type="date" style={s.input} value={form.due || ""} onChange={e => setForm({ ...form, due: e.target.value })} />
                   </div>
                 </div>
+
+                {form.completedDate && (
+                  <div style={{ background: "#f0fff0", border: "1px solid #d0f0d0", borderRadius: 8, padding: "8px 14px", marginBottom: 10, fontSize: 13, color: "#4a8c4a" }}>
+                    ✅ Terminée le {form.completedDate}
+                  </div>
+                )}
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

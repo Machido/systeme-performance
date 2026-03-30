@@ -124,6 +124,7 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
+  const [kanbanSearch, setKanbanSearch] = useState("");
   const [completionJournal, setCompletionJournal] = useState(null); // {task, project, dept} when completing a task
   const [journalProjectFilter, setJournalProjectFilter] = useState("all");
   const [journalDeptFilter, setJournalDeptFilter] = useState("all");
@@ -435,6 +436,10 @@ export default function App() {
           if (deptFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.dept === deptFilter);
           if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
+          if (kanbanSearch.trim()) {
+            const q = kanbanSearch.toLowerCase();
+            kanbanTasks = kanbanTasks.filter(t => t.name.toLowerCase().includes(q) || (t.notes || "").toLowerCase().includes(q));
+          }
 
           kanbanTasks = [...kanbanTasks].sort((a, b) => {
             const aIdx = kanbanOrder.indexOf(a.id);
@@ -446,6 +451,10 @@ export default function App() {
             <div>
               {/* Filters */}
               <div style={{ display: "flex", gap: 16, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
+                <div>
+                  <label style={s.label}>Recherche</label>
+                  <input style={{ ...s.input, marginBottom: 0, minWidth: 180 }} placeholder="🔍 Rechercher une tâche…" value={kanbanSearch} onChange={e => setKanbanSearch(e.target.value)} />
+                </div>
                 <div>
                   <label style={s.label}>Projet</label>
                   <select style={{ ...s.select, marginBottom: 0, minWidth: 170 }} value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>

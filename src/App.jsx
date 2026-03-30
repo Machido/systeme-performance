@@ -662,13 +662,49 @@ export default function App() {
             );
           };
 
+          // Satisfaction score
+          const avgScore = tempLine.length
+            ? (tempLine.reduce((s, t) => s + t.temp, 0) / tempLine.length)
+            : null;
+          const avgScoreRounded = avgScore !== null ? Math.round(avgScore * 10) / 10 : null;
+          const avgScoreEmoji = avgScore !== null ? getTempEmoji(Math.round(avgScore)) : "—";
+
           return (
             <div>
               <div style={s.sectionTitle}>
                 <span>DASHBOARD — {deptFilter === "all" ? "TOUS DÉPARTEMENTS" : DEPTS.find(d => d.id === deptFilter)?.label.toUpperCase()}</span>
               </div>
 
-              {/* Row 1: Dial + Pie + Overdue summary */}
+              {/* Row 0: Satisfaction Score — HERO */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 16 }}>
+                {/* Big score */}
+                <div style={{ ...chartCard, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 20px", marginBottom: 0 }}>
+                  <div style={chartTitle}>Score de satisfaction</div>
+                  <div style={{ fontSize: 56, marginBottom: 4 }}>{avgScoreEmoji}</div>
+                  <div style={{ fontSize: 36, fontWeight: 800, color: "#5b4ef8" }}>{avgScoreRounded !== null ? `${avgScoreRounded}/10` : "—"}</div>
+                  <div style={{ fontSize: 12, color: "#aaa", marginTop: 4 }}>{tempLine.length} entrée{tempLine.length > 1 ? "s" : ""} journal</div>
+                </div>
+
+                {/* Satisfaction trend line */}
+                <div style={{ ...chartCard, marginBottom: 0 }}>
+                  <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
+                  {tempLine.length < 2
+                    ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
+                    : <ResponsiveContainer width="100%" height={180}>
+                      <LineChart data={tempLine}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                        <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
+                          tickFormatter={v => getTempEmoji(v)} />
+                        <Tooltip formatter={(val) => [getTempEmoji(val) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `Date: ${l}`} />
+                        <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  }
+                </div>
+              </div>
+
+              {/* Row 1: Dial + Pie + System state */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 0 }}>
 
                 {/* Completion dial */}
@@ -711,7 +747,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Overdue / active summary */}
+                {/* System state */}
                 <div style={chartCard}>
                   <div style={chartTitle}>État du système</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
@@ -761,24 +797,6 @@ export default function App() {
                     <Bar dataKey="Passées" fill="#5b4ef8" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-
-              {/* Row 4: Temperature line chart */}
-              <div style={{ ...chartCard, marginTop: 0 }}>
-                <div style={chartTitle}>Tendance température 😓 → 😄</div>
-                {tempLine.length < 2
-                  ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
-                  : <ResponsiveContainer width="100%" height={180}>
-                    <LineChart data={tempLine}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
-                      <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
-                        tickFormatter={v => ["😓", "😐", "🙂", "😊", "😄"][v]} />
-                      <Tooltip formatter={(val) => [["😓", "😐", "🙂", "😊", "😄"][val], "Température"]} labelFormatter={l => `Date: ${l}`} />
-                      <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                }
               </div>
             </div>
           );

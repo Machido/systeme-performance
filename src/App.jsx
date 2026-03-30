@@ -53,7 +53,28 @@ const initialJournal = [
 
 const today = new Date(); today.setHours(0, 0, 0, 0);
 const todayStr = today.toISOString().split("T")[0];
+const tomorrowDate = new Date(today); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+const endOfWeek = new Date(today);
+endOfWeek.setDate(endOfWeek.getDate() + (endOfWeek.getDay() === 0 ? 0 : 7 - endOfWeek.getDay()));
+const endOfWeekStr = endOfWeek.toISOString().split("T")[0];
+
 const isOverdue = (due) => due && new Date(due) < today;
+
+const DEADLINE_COLS = [
+  { id: "today", label: "Aujourd'hui", icon: "📌" },
+  { id: "tomorrow", label: "Demain", icon: "📅" },
+  { id: "week", label: "Cette semaine", icon: "🗓" },
+  { id: "later", label: "Plus tard", icon: "📦" },
+];
+
+const getDeadlineCol = (due) => {
+  if (!due) return "later";
+  if (due <= todayStr) return "today"; // includes overdue
+  if (due === tomorrowStr) return "tomorrow";
+  if (due <= endOfWeekStr) return "week";
+  return "later";
+};
 
 const formatTodayLabel = () => {
   return today.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }).toUpperCase();
@@ -77,6 +98,10 @@ export default function App() {
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
   const [cellValue, setCellValue] = useState("");
   const [kanbanShowDone, setKanbanShowDone] = useState(false);
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [kanbanOrder, setKanbanOrder] = useState([]);
+  const [dragOverId, setDragOverId] = useState(null);
 
   // ── LOAD from Supabase on mount ──
   useEffect(() => {
@@ -201,6 +226,37 @@ export default function App() {
     setDragging(null);
   };
 
+  // Kanban order sync — keep order in sync with tasks list
+  useEffect(() => {
+    setKanbanOrder(prev => {
+      const taskIds = new Set(tasks.map(t => t.id));
+      const kept = prev.filter(id => taskIds.has(id));
+      const newIds = tasks.filter(t => !prev.includes(t.id)).map(t => t.id);
+      return [...kept, ...newIds];
+    });
+  }, [tasks]);
+
+  const onKanbanDragOver = (e, targetId) => {
+    e.preventDefault();
+    if (targetId !== dragging) setDragOverId(targetId);
+  };
+
+  const onKanbanDrop = () => {
+    if (!dragging || !dragOverId || dragging === dragOverId) {
+      setDragging(null);
+      setDragOverId(null);
+      return;
+    }
+    setKanbanOrder(prev => {
+      const newOrder = prev.filter(id => id !== dragging);
+      const targetIdx = newOrder.indexOf(dragOverId);
+      newOrder.splice(targetIdx, 0, dragging);
+      return newOrder;
+    });
+    setDragging(null);
+    setDragOverId(null);
+  };
+
   // Inline cell editing
   const startEdit = (table, id, field, value) => {
     setEditingCell({ table, id, field });
@@ -307,50 +363,91 @@ export default function App() {
       <div style={s.body}>
 
         {/* ── KANBAN ── */}
-        {tab === "kanban" && (
-          <div>
-            <div style={{ ...s.sectionTitle, marginBottom: 16 }}>
-              <span>TÂCHES — VUE KANBAN</span>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <button
-                  style={{ ...s.btn("ghost"), fontSize: 13, padding: "6px 12px", color: kanbanShowDone ? "#5b4ef8" : "#aaa", borderColor: kanbanShowDone ? "#5b4ef8" : "#ddd" }}
-                  onClick={() => setKanbanShowDone(!kanbanShowDone)}>
-                  {kanbanShowDone ? "✓ Terminées visibles" : "Masquer terminées"}
-                </button>
-                <button style={s.btn("primary")} onClick={() => openModal("task", { status: "À faire", priority: "Moyenne", dept: deptFilter === "all" ? "ops" : deptFilter, temp: 2 })}>+ Nouvelle tâche</button>
+        {tab === "kanban" && (() => {
+          let kanbanTasks = tasks;
+          if (deptFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.dept === deptFilter);
+          if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
+          if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
+
+          kanbanTasks = [...kanbanTasks].sort((a, b) => {
+            const aIdx = kanbanOrder.indexOf(a.id);
+            const bIdx = kanbanOrder.indexOf(b.id);
+            return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+          });
+
+          return (
+            <div>
+              {/* Filters */}
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
+                <div>
+                  <label style={s.label}>Projet</label>
+                  <select style={{ ...s.select, marginBottom: 0, minWidth: 170 }} value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>
+                    <option value="all">Tous les projets</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={s.label}>Statut</label>
+                  <select style={{ ...s.select, marginBottom: 0, minWidth: 140 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                    <option value="all">Tous les statuts</option>
+                    {STATUSES.map(st => <option key={st} value={st}>{STATUS_ICONS[st]} {st}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={s.label}>Département</label>
+                  <select style={{ ...s.select, marginBottom: 0, minWidth: 160 }} value={deptFilter} onChange={e => setDeptFilter(e.target.value)}>
+                    <option value="all">Tous les départements</option>
+                    {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                  </select>
+                </div>
+                <div style={{ marginLeft: "auto" }}>
+                  <button style={s.btn("primary")} onClick={() => openModal("task", { status: "À faire", priority: "Moyenne", dept: deptFilter === "all" ? "ops" : deptFilter, temp: 2 })}>+ Nouvelle tâche</button>
+                </div>
+              </div>
+
+              {/* Deadline columns */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, alignItems: "start" }}>
+                {DEADLINE_COLS.map(col => {
+                  const colTasks = kanbanTasks.filter(t => getDeadlineCol(t.due) === col.id);
+                  return (
+                    <div key={col.id} style={s.kanbanCol}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={onKanbanDrop}>
+                      <div style={s.kanbanColHeader}>
+                        {col.icon} {col.label} <span style={{ color: "#333", marginLeft: 4 }}>({colTasks.length})</span>
+                      </div>
+                      {colTasks.map(task => (
+                        <div key={task.id}
+                          style={{
+                            ...s.taskCard(task.dept),
+                            opacity: dragging === task.id ? 0.4 : 1,
+                            borderTop: dragOverId === task.id ? "2px solid #5b4ef8" : "none",
+                            transition: "opacity 0.15s",
+                          }}
+                          draggable
+                          onDragStart={() => onDragStart(task.id)}
+                          onDragOver={e => onKanbanDragOver(e, task.id)}
+                          onDragEnd={() => { setDragging(null); setDragOverId(null); }}
+                          onClick={() => openModal("task", { ...task })}>
+                          <div style={{ fontSize: 14, color: "#222", marginBottom: 6, lineHeight: 1.4 }}>{task.name}</div>
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                            <span style={s.tag(getDeptColor(task.dept))}>{getDeptIcon(task.dept)}</span>
+                            <span style={s.tag(PRIO_COLOR[task.priority])}>{task.priority}</span>
+                            <span style={s.tag("#555")}>{STATUS_ICONS[task.status]} {task.status}</span>
+                            {isOverdue(task.due) && task.status !== "Terminé" && task.status !== "Abandonné" && <span style={s.tag("#E85555")}>⚠ Retard</span>}
+                            <span style={{ marginLeft: "auto", fontSize: 14 }}>{getTempEmoji(task.temp)}</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>Échéance {task.due || "—"}</div>
+                        </div>
+                      ))}
+                      {colTasks.length === 0 && <div style={{ color: "#ddd", fontSize: 13, textAlign: "center", padding: "20px 0" }}>—</div>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <div style={{ ...s.kanbanGrid, gridTemplateColumns: kanbanShowDone ? "repeat(4, 1fr)" : "repeat(2, 1fr)" }}>
-              {STATUSES.filter(status => kanbanShowDone ? true : (status === "À faire" || status === "En cours")).map(status => {
-                const colTasks = filteredTasks.filter(t => t.status === status);
-                return (
-                  <div key={status} style={s.kanbanCol}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={() => onDrop(status)}>
-                    <div style={s.kanbanColHeader}>
-                      {STATUS_ICONS[status]} {status} <span style={{ color: "#333", marginLeft: 4 }}>({colTasks.length})</span>
-                    </div>
-                    {colTasks.map(task => (
-                      <div key={task.id} style={s.taskCard(task.dept)}
-                        draggable onDragStart={() => onDragStart(task.id)}
-                        onClick={() => openModal("task", { ...task })}>
-                        <div style={{ fontSize: 14, color: "#222", marginBottom: 6, lineHeight: 1.4 }}>{task.name}</div>
-                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
-                          <span style={s.tag(getDeptColor(task.dept))}>{getDeptIcon(task.dept)}</span>
-                          <span style={s.tag(PRIO_COLOR[task.priority])}>{task.priority}</span>
-                          {isOverdue(task.due) && status !== "Terminé" && status !== "Abandonné" && <span style={s.tag("#E85555")}>⚠ Retard</span>}
-                          <span style={{ marginLeft: "auto", fontSize: 14 }}>{getTempEmoji(task.temp)}</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>Échéance {task.due}</div>
-                      </div>
-                    ))}
-                    {colTasks.length === 0 && <div style={{ color: "#ddd", fontSize: 13, textAlign: "center", padding: "20px 0" }}>—</div>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── ACCUEIL ── */}
         {tab === "home" && (

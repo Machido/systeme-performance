@@ -119,7 +119,7 @@ export default function App() {
   const [dataTab, setDataTab] = useState("projects");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
   const [cellValue, setCellValue] = useState("");
-  const [kanbanShowDone, setKanbanShowDone] = useState(false);
+  const [kanbanShowDone, setKanbanShowDone] = useState(true);
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
@@ -434,8 +434,10 @@ export default function App() {
         {tab === "kanban" && (() => {
           let kanbanTasks = tasks;
           if (deptFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.dept === deptFilter);
-          if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
+          if (projectFilter === "none") kanbanTasks = kanbanTasks.filter(t => !t.project);
+          else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
+          if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
           if (kanbanSearch.trim()) {
             const q = kanbanSearch.toLowerCase();
             kanbanTasks = kanbanTasks.filter(t => t.name.toLowerCase().includes(q) || (t.notes || "").toLowerCase().includes(q));
@@ -459,6 +461,7 @@ export default function App() {
                   <label style={s.label}>Projet</label>
                   <select style={{ ...s.select, marginBottom: 0, minWidth: 170 }} value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>
                     <option value="all">Tous les projets</option>
+                    <option value="none">Aucun projet</option>
                     {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
                   </select>
                 </div>
@@ -476,7 +479,11 @@ export default function App() {
                     {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
                   </select>
                 </div>
-                <div style={{ marginLeft: "auto" }}>
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                    <input type="checkbox" checked={kanbanShowDone} onChange={e => setKanbanShowDone(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                    Tâches terminées
+                  </label>
                   <button style={s.btn("primary")} onClick={() => openModal("task", { status: "À faire", priority: "Moyenne", dept: deptFilter === "all" ? "ops" : deptFilter, temp: 2 })}>+ Nouvelle tâche</button>
                 </div>
               </div>

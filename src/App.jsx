@@ -222,7 +222,7 @@ export default function App() {
       updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
       const id = "T" + Date.now();
-      record = { ...form, id, passedH: 0, temp: form.temp ?? 5, status: form.status || "À faire" };
+      record = { ...form, id, passedH: 0, temp: form.temp ?? 5, status: form.status || "À faire", createdDate: todayStr };
       if (form.status === "Terminé") record.completedDate = todayStr;
       updated = [...tasks, record];
     }
@@ -247,7 +247,7 @@ export default function App() {
       updated = journal.map(j => j.id === form.id ? record : j);
     } else {
       const id = "J" + Date.now();
-      record = { ...form, id, date: new Date().toISOString().split("T")[0] };
+      record = { ...form, id, date: todayStr, createdDate: todayStr };
       updated = [record, ...journal];
     }
     updateJournal(updated);
@@ -264,7 +264,7 @@ export default function App() {
       updated = projects.map(p => p.id === form.id ? record : p);
     } else {
       const id = "P" + Date.now();
-      record = { ...form, id };
+      record = { ...form, id, createdDate: todayStr };
       updated = [...projects, record];
     }
     updateProjects(updated);
@@ -771,12 +771,7 @@ export default function App() {
 
               {/* Velocity chart: tasks created vs completed */}
               {(() => {
-                // Derive creation date from task ID or fallback to due date
-                const getCreatedDate = (t) => {
-                  const m = t.id.match(/^T(\d{10,13})$/);
-                  if (m) return new Date(Number(m[1])).toISOString().split("T")[0];
-                  return t.due || null;
-                };
+                const getCreatedDate = (t) => t.createdDate || t.due || null;
                 // Filter tasks by velocity filters
                 let vTasks = tasks;
                 if (veloDept !== "all") vTasks = vTasks.filter(t => t.dept === veloDept);

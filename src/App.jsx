@@ -790,7 +790,7 @@ export default function App() {
                   const doneDate = t.status === "Terminé" ? (t.completedDate || t.due || todayStr) : t.completedDate;
                   if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0 }; dateMap[doneDate].completed++; }
                 });
-                const veloData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
+                const veloData = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
                 const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>

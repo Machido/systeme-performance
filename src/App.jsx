@@ -58,7 +58,7 @@ const initialJournal = [
 ];
 
 const today = new Date(); today.setHours(0, 0, 0, 0);
-const todayStr = today.toISOString().split("T")[0];
+const todayStr = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
 const tomorrowDate = new Date(today); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
 const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
 const endOfWeek = new Date(today);

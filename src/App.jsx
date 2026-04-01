@@ -856,7 +856,7 @@ export default function App() {
                             ))}
                           </div>
                         </div>
-                        {satData.length < 2
+                        {satData.length < 1
                           ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
                           : <ResponsiveContainer width="100%" height={220}>
                             <LineChart data={satData}>

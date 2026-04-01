@@ -156,6 +156,7 @@ export default function App() {
   const [kanbanShowDone, setKanbanShowDone] = useState(true);
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
   const [kanbanSearch, setKanbanSearch] = useState("");
@@ -479,6 +480,7 @@ export default function App() {
           if (projectFilter === "none") kanbanTasks = kanbanTasks.filter(t => !t.project);
           else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
+          if (priorityFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.priority === priorityFilter);
           if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
           if (kanbanSearch.trim()) {
             const q = kanbanSearch.toLowerCase();
@@ -519,6 +521,13 @@ export default function App() {
                   <select style={{ ...s.select, marginBottom: 0, minWidth: 160 }} value={deptFilter} onChange={e => setDeptFilter(e.target.value)}>
                     <option value="all">Tous les départements</option>
                     {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={s.label}>Priorité</label>
+                  <select style={{ ...s.select, marginBottom: 0, minWidth: 130 }} value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
+                    <option value="all">Toutes priorités</option>
+                    {PRIORITIES.map(p => <option key={p} value={p} style={{ color: PRIO_COLOR[p] }}>{p}</option>)}
                   </select>
                 </div>
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>

@@ -751,24 +751,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Satisfaction trend — full width */}
-              <div style={{ ...chartCard, marginBottom: 16 }}>
-                <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
-                {tempLine.length < 2
-                  ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
-                  : <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={tempLine}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
-                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
-                        tickFormatter={v => getTempEmoji(v)} />
-                      <Tooltip formatter={(val) => [getTempEmoji(val) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `Date: ${l}`} />
-                      <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                }
-              </div>
-
               {/* Velocity chart: tasks created vs completed */}
               {(() => {
                 const getCreatedDate = (t) => t.createdDate || t.due || null;
@@ -787,7 +769,7 @@ export default function App() {
                 });
                 const veloData = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
                 const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
-                return (
+                return (<>
                   <div style={{ ...chartCard, marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                       <div style={chartTitle}>Vélocité — Tâches créées vs complétées</div>
@@ -817,7 +799,25 @@ export default function App() {
                       </ResponsiveContainer>
                     }
                   </div>
-                );
+
+                  {/* Satisfaction trend — full width */}
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
+                    {tempLine.length < 2
+                      ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
+                      : <ResponsiveContainer width="100%" height={220}>
+                        <LineChart data={tempLine}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                          <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
+                            tickFormatter={v => getTempEmoji(v)} />
+                          <Tooltip formatter={(val) => [getTempEmoji(val) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `Date: ${l}`} />
+                          <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    }
+                  </div>
+                </>);
               })()}
 
               {/* Row 1: Dial + Pie + System state */}

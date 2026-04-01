@@ -98,6 +98,36 @@ const getDropDate = (colId) => {
   return todayStr;
 };
 
+// Period aggregation helpers
+const getWeekKey = (dateStr) => {
+  const d = new Date(dateStr + "T00:00:00");
+  const day = d.getDay() || 7; // Mon=1..Sun=7
+  d.setDate(d.getDate() + 4 - day); // Thursday of the week
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  // Return the Monday of that week as label
+  const mon = new Date(dateStr + "T00:00:00");
+  mon.setDate(mon.getDate() - (mon.getDay() || 7) + 1);
+  return mon.getFullYear() + "-" + String(mon.getMonth() + 1).padStart(2, "0") + "-" + String(mon.getDate()).padStart(2, "0");
+};
+const getMonthKey = (dateStr) => dateStr.slice(0, 7); // YYYY-MM
+
+const aggregateByPeriod = (data, period, valueKeys, mode = "sum") => {
+  if (period === "daily") return data;
+  const keyFn = period === "weekly" ? getWeekKey : getMonthKey;
+  const groups = {};
+  data.forEach(d => {
+    const key = keyFn(d.date);
+    if (!groups[key]) { groups[key] = { date: key, _count: 0 }; valueKeys.forEach(k => groups[key][k] = 0); }
+    valueKeys.forEach(k => { groups[key][k] += (d[k] || 0); });
+    groups[key]._count++;
+  });
+  if (mode === "avg") {
+    Object.values(groups).forEach(g => { valueKeys.forEach(k => { g[k] = Math.round(g[k] / g._count * 10) / 10; }); });
+  }
+  return Object.values(groups).sort((a, b) => a.date.localeCompare(b.date));
+};
+
 const formatTodayLabel = () => {
   return today.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }).toUpperCase();
 };
@@ -119,6 +149,8 @@ export default function App() {
   const [dataTab, setDataTab] = useState("projects");
   const [veloDept, setVeloDept] = useState("all");
   const [veloProject, setVeloProject] = useState("all");
+  const [veloPeriod, setVeloPeriod] = useState("daily");
+  const [satPeriod, setSatPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
   const [cellValue, setCellValue] = useState("");
   const [kanbanShowDone, setKanbanShowDone] = useState(true);
@@ -768,12 +800,21 @@ export default function App() {
                   const doneDate = t.status === "Terminé" ? (t.completedDate || t.due || todayStr) : t.completedDate;
                   if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0 }; dateMap[doneDate].completed++; }
                 });
-                const veloData = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+                const veloDataRaw = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+                const veloData = aggregateByPeriod(veloDataRaw, veloPeriod, ["created", "completed"], "sum");
                 const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
+                const toggleStyle = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
                 return (<>
                   <div style={{ ...chartCard, marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-                      <div style={chartTitle}>Vélocité — Tâches créées vs complétées</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={chartTitle}>Vélocité — Tâches créées vs complétées</div>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                            <button key={k} style={toggleStyle(veloPeriod === k)} onClick={() => setVeloPeriod(k)}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <select value={veloDept} onChange={e => setVeloDept(e.target.value)} style={selectStyle}>
                           <option value="all">Tous départements</option>
@@ -802,22 +843,35 @@ export default function App() {
                   </div>
 
                   {/* Satisfaction trend — full width */}
-                  <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
-                    {tempLine.length < 2
-                      ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
-                      : <ResponsiveContainer width="100%" height={220}>
-                        <LineChart data={tempLine}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
-                          <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
-                            tickFormatter={v => getTempEmoji(v)} />
-                          <Tooltip formatter={(val) => [getTempEmoji(val) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `Date: ${l}`} />
-                          <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    }
-                  </div>
+                  {(() => {
+                    const satData = aggregateByPeriod(tempLine, satPeriod, ["temp"], "avg");
+                    const toggleStyle2 = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
+                    return (
+                      <div style={{ ...chartCard, marginBottom: 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                          <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                              <button key={k} style={toggleStyle2(satPeriod === k)} onClick={() => setSatPeriod(k)}>{l}</button>
+                            ))}
+                          </div>
+                        </div>
+                        {satData.length < 2
+                          ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
+                          : <ResponsiveContainer width="100%" height={220}>
+                            <LineChart data={satData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                              <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
+                                tickFormatter={v => getTempEmoji(v)} />
+                              <Tooltip formatter={(val) => [getTempEmoji(Math.round(val)) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `${satPeriod === "daily" ? "Date" : satPeriod === "weekly" ? "Semaine du" : "Mois"}: ${l}`} />
+                              <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        }
+                      </div>
+                    );
+                  })()}
                 </>);
               })()}
 

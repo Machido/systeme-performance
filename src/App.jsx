@@ -731,33 +731,32 @@ export default function App() {
                 <span>DASHBOARD — {deptFilter === "all" ? "TOUS DÉPARTEMENTS" : DEPTS.find(d => d.id === deptFilter)?.label.toUpperCase()}</span>
               </div>
 
-              {/* Row 0: Satisfaction Score — HERO */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 16 }}>
-                {/* Big score */}
-                <div style={{ ...chartCard, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 20px", marginBottom: 0 }}>
+              {/* Row 0: Satisfaction Score — compact */}
+              <div style={{ ...chartCard, display: "flex", alignItems: "center", gap: 20, padding: "18px 24px", marginBottom: 16 }}>
+                <div style={{ fontSize: 48 }}>{avgScoreEmoji}</div>
+                <div>
                   <div style={chartTitle}>Score de satisfaction</div>
-                  <div style={{ fontSize: 56, marginBottom: 4 }}>{avgScoreEmoji}</div>
-                  <div style={{ fontSize: 36, fontWeight: 800, color: "#5b4ef8" }}>{avgScoreRounded !== null ? `${avgScoreRounded}/10` : "—"}</div>
-                  <div style={{ fontSize: 12, color: "#aaa", marginTop: 4 }}>{tempLine.length} entrée{tempLine.length > 1 ? "s" : ""} journal</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: "#5b4ef8" }}>{avgScoreRounded !== null ? `${avgScoreRounded}/10` : "—"}</div>
+                  <div style={{ fontSize: 12, color: "#aaa" }}>{tempLine.length} entrée{tempLine.length > 1 ? "s" : ""} journal</div>
                 </div>
+              </div>
 
-                {/* Satisfaction trend line */}
-                <div style={{ ...chartCard, marginBottom: 0 }}>
-                  <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
-                  {tempLine.length < 2
-                    ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
-                    : <ResponsiveContainer width="100%" height={180}>
-                      <LineChart data={tempLine}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
-                        <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
-                          tickFormatter={v => getTempEmoji(v)} />
-                        <Tooltip formatter={(val) => [getTempEmoji(val) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `Date: ${l}`} />
-                        <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  }
-                </div>
+              {/* Satisfaction trend — full width */}
+              <div style={{ ...chartCard, marginBottom: 16 }}>
+                <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
+                {tempLine.length < 2
+                  ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
+                  : <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={tempLine}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
+                        tickFormatter={v => getTempEmoji(v)} />
+                      <Tooltip formatter={(val) => [getTempEmoji(val) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `Date: ${l}`} />
+                      <Line type="monotone" dataKey="temp" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                }
               </div>
 
               {/* Row 1: Dial + Pie + System state */}

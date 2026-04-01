@@ -1201,11 +1201,16 @@ export default function App() {
                   </div>
                 </div>
 
-                {form.completedDate && (
-                  <div style={{ background: "#f0fff0", border: "1px solid #d0f0d0", borderRadius: 8, padding: "8px 14px", marginBottom: 10, fontSize: 13, color: "#4a8c4a" }}>
-                    ✅ Terminée le {form.completedDate}
+                <div style={s.row}>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Date de complétion</label>
+                    <input type="date" style={s.input} value={form.completedDate || ""} onChange={e => setForm({ ...form, completedDate: e.target.value })} />
                   </div>
-                )}
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Date de création</label>
+                    <input type="date" style={{ ...s.input, background: "#f5f5f5", color: "#888" }} value={form.createdDate || ""} readOnly />
+                  </div>
+                </div>
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

@@ -137,7 +137,7 @@ const getDeptIcon = (deptId) => DEPTS.find(d => d.id === deptId)?.icon || "";
 const getTempEmoji = (score) => TEMPS.find(t => t.score === score)?.emoji || "🙂";
 
 export default function App() {
-  const [tab, setTab] = useState("kanban");
+  const [tab, setTab] = useState("home");
   const [projects, setProjects] = useState(initialProjects);
   const [tasks, setTasks] = useState(initialTasks);
   const [journal, setJournal] = useState(initialJournal);

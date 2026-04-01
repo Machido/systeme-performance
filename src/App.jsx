@@ -778,7 +778,9 @@ export default function App() {
                 vTasks.forEach(t => {
                   const cd = getCreatedDate(t);
                   if (cd) { dateMap[cd] = dateMap[cd] || { date: cd, created: 0, completed: 0 }; dateMap[cd].created++; }
-                  if (t.completedDate) { dateMap[t.completedDate] = dateMap[t.completedDate] || { date: t.completedDate, created: 0, completed: 0 }; dateMap[t.completedDate].completed++; }
+                  // Use completedDate, or fallback to due/today for completed tasks
+                  const doneDate = t.status === "Terminé" ? (t.completedDate || t.due || todayStr) : t.completedDate;
+                  if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0 }; dateMap[doneDate].completed++; }
                 });
                 const veloData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
                 const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };

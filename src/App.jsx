@@ -276,9 +276,13 @@ export default function App() {
   const onDrop = (status) => {
     if (!dragging) return;
     const task = tasks.find(t => t.id === dragging);
-    const updated = tasks.map(t => t.id === dragging ? { ...t, status } : t);
+    const record = { ...task, status };
+    // Auto-set completedDate on drag to Terminé, clear if dragged away
+    if (status === "Terminé" && task.status !== "Terminé") record.completedDate = todayStr;
+    if (status !== "Terminé" && task.status === "Terminé") record.completedDate = null;
+    const updated = tasks.map(t => t.id === dragging ? record : t);
     updateTasks(updated);
-    syncRecord("tasks", { ...task, status });
+    syncRecord("tasks", record);
     setDragging(null);
   };
 
@@ -340,7 +344,11 @@ export default function App() {
       updateProjects(projects.map(p => p.id === id ? record : p));
       syncRecord("projects", record);
     } else if (table === "tasks") {
-      const record = { ...tasks.find(t => t.id === id), [field]: cellValue };
+      const prev = tasks.find(t => t.id === id);
+      const record = { ...prev, [field]: cellValue };
+      // Auto-set completedDate when status changes to/from Terminé
+      if (field === "status" && cellValue === "Terminé" && prev.status !== "Terminé") record.completedDate = todayStr;
+      if (field === "status" && cellValue !== "Terminé" && prev.status === "Terminé") record.completedDate = null;
       updateTasks(tasks.map(t => t.id === id ? record : t));
       syncRecord("tasks", record);
     } else if (table === "journal") {

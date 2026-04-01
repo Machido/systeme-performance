@@ -696,6 +696,7 @@ export default function App() {
 
           // Temperature line chart (journal over time)
           const tempLine = [...journal]
+            .filter(j => j.type === "📝 Note")
             .sort((a, b) => a.date.localeCompare(b.date))
             .filter(j => deptFilter === "all" || j.dept === deptFilter)
             .map(j => ({
@@ -1329,12 +1330,14 @@ export default function App() {
                   </div>
                 </div>
 
-                <label style={s.label}>Température (0-10)</label>
-                <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
-                  {TEMPS.map(t => (
-                    <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
-                  ))}
-                </div>
+                {form.type === "📝 Note" && (<>
+                  <label style={s.label}>Température (0-10)</label>
+                  <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
+                    {TEMPS.map(t => (
+                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
+                    ))}
+                  </div>
+                </>)}
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -1377,12 +1380,14 @@ export default function App() {
             <label style={s.label}>Description</label>
             <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Qu'avez-vous appris ? Que retenir ?" />
 
-            <label style={s.label}>Température (0-10)</label>
-            <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
-              {TEMPS.map(t => (
-                <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
-              ))}
-            </div>
+            {form.type === "📝 Note" && (<>
+              <label style={s.label}>Température (0-10)</label>
+              <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
+                {TEMPS.map(t => (
+                  <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
+                ))}
+              </div>
+            </>)}
 
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button style={s.btn("ghost")} onClick={() => setCompletionJournal(null)}>Passer</button>

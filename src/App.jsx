@@ -732,7 +732,7 @@ export default function App() {
             .sort((a, b) => a.date.localeCompare(b.date))
             .filter(j => deptFilter === "all" || j.dept === deptFilter)
             .map(j => ({
-              date: j.date.slice(5), // MM-DD
+              date: j.date, // full YYYY-MM-DD for aggregation
               temp: j.temp,
               emoji: getTempEmoji(j.temp),
             }));
@@ -831,7 +831,7 @@ export default function App() {
                       : <ResponsiveContainer width="100%" height={220}>
                         <LineChart data={veloData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} tickFormatter={d => d.length > 7 ? d.slice(5) : d} />
                           <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
                           <Tooltip />
                           <Legend />
@@ -861,7 +861,7 @@ export default function App() {
                           : <ResponsiveContainer width="100%" height={220}>
                             <LineChart data={satData}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} tickFormatter={d => d.length > 7 ? d.slice(5) : d} />
                               <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }}
                                 tickFormatter={v => getTempEmoji(v)} />
                               <Tooltip formatter={(val) => [getTempEmoji(Math.round(val)) + " " + val + "/10", "Satisfaction"]} labelFormatter={l => `${satPeriod === "daily" ? "Date" : satPeriod === "weekly" ? "Semaine du" : "Mois"}: ${l}`} />

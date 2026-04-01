@@ -117,6 +117,8 @@ export default function App() {
   const [dragging, setDragging] = useState(null);
   const [storageReady, setStorageReady] = useState(false);
   const [dataTab, setDataTab] = useState("projects");
+  const [veloDept, setVeloDept] = useState("all");
+  const [veloProject, setVeloProject] = useState("all");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
   const [cellValue, setCellValue] = useState("");
   const [kanbanShowDone, setKanbanShowDone] = useState(true);
@@ -758,6 +760,60 @@ export default function App() {
                   </ResponsiveContainer>
                 }
               </div>
+
+              {/* Velocity chart: tasks created vs completed */}
+              {(() => {
+                // Derive creation date from task ID or fallback to due date
+                const getCreatedDate = (t) => {
+                  const m = t.id.match(/^T(\d{10,13})$/);
+                  if (m) return new Date(Number(m[1])).toISOString().split("T")[0];
+                  return t.due || null;
+                };
+                // Filter tasks by velocity filters
+                let vTasks = tasks;
+                if (veloDept !== "all") vTasks = vTasks.filter(t => t.dept === veloDept);
+                if (veloProject !== "all") vTasks = vTasks.filter(t => t.project === veloProject);
+                // Build date map
+                const dateMap = {};
+                vTasks.forEach(t => {
+                  const cd = getCreatedDate(t);
+                  if (cd) { dateMap[cd] = dateMap[cd] || { date: cd, created: 0, completed: 0 }; dateMap[cd].created++; }
+                  if (t.completedDate) { dateMap[t.completedDate] = dateMap[t.completedDate] || { date: t.completedDate, created: 0, completed: 0 }; dateMap[t.completedDate].completed++; }
+                });
+                const veloData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
+                const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
+                return (
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                      <div style={chartTitle}>Vélocité — Tâches créées vs complétées</div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <select value={veloDept} onChange={e => setVeloDept(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous départements</option>
+                          {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                        </select>
+                        <select value={veloProject} onChange={e => setVeloProject(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous projets</option>
+                          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    {veloData.length < 1
+                      ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez de données pour afficher la vélocité.</div>
+                      : <ResponsiveContainer width="100%" height={220}>
+                        <LineChart data={veloData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                          <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                          <Tooltip />
+                          <Legend />
+                          <Line type="monotone" dataKey="created" name="Créées" stroke="#4A90D9" strokeWidth={2.5} dot={{ fill: "#4A90D9", r: 4 }} />
+                          <Line type="monotone" dataKey="completed" name="Complétées" stroke="#6BBF6B" strokeWidth={2.5} dot={{ fill: "#6BBF6B", r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    }
+                  </div>
+                );
+              })()}
 
               {/* Row 1: Dial + Pie + System state */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 0 }}>

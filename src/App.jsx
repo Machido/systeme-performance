@@ -250,13 +250,16 @@ export default function App() {
     const wasCompleted = form.id && prevStatus !== "Terminé" && form.status === "Terminé";
     if (form.id) {
       record = { ...tasks.find(t => t.id === form.id), ...form };
-      if (wasCompleted) record.completedDate = todayStr;
+      // Only auto-set completedDate if status changes to Terminé AND no date was manually entered
+      if (wasCompleted && !form.completedDate) record.completedDate = todayStr;
+      // Only clear if status changes away from Terminé
       if (prevStatus === "Terminé" && form.status !== "Terminé") record.completedDate = null;
       updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
       const id = "T" + Date.now();
       record = { ...form, id, passedH: 0, temp: form.temp ?? 5, status: form.status || "À faire", createdDate: todayStr };
-      if (form.status === "Terminé") record.completedDate = todayStr;
+      // Only auto-set if creating new task as Terminé AND no date provided
+      if (form.status === "Terminé" && !form.completedDate) record.completedDate = todayStr;
       updated = [...tasks, record];
     }
     updateTasks(updated);
@@ -310,8 +313,8 @@ export default function App() {
     if (!dragging) return;
     const task = tasks.find(t => t.id === dragging);
     const record = { ...task, status };
-    // Auto-set completedDate on drag to Terminé, clear if dragged away
-    if (status === "Terminé" && task.status !== "Terminé") record.completedDate = todayStr;
+    // Auto-set completedDate on drag to Terminé only if not already set, clear if dragged away
+    if (status === "Terminé" && task.status !== "Terminé" && !task.completedDate) record.completedDate = todayStr;
     if (status !== "Terminé" && task.status === "Terminé") record.completedDate = null;
     const updated = tasks.map(t => t.id === dragging ? record : t);
     updateTasks(updated);
@@ -379,8 +382,8 @@ export default function App() {
     } else if (table === "tasks") {
       const prev = tasks.find(t => t.id === id);
       const record = { ...prev, [field]: cellValue };
-      // Auto-set completedDate when status changes to/from Terminé
-      if (field === "status" && cellValue === "Terminé" && prev.status !== "Terminé") record.completedDate = todayStr;
+      // Auto-set completedDate when status changes to Terminé, only if no date set; always clear if changing away
+      if (field === "status" && cellValue === "Terminé" && prev.status !== "Terminé" && !prev.completedDate) record.completedDate = todayStr;
       if (field === "status" && cellValue !== "Terminé" && prev.status === "Terminé") record.completedDate = null;
       updateTasks(tasks.map(t => t.id === id ? record : t));
       syncRecord("tasks", record);

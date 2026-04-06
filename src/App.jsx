@@ -67,35 +67,20 @@ const endOfWeekStr = endOfWeek.toISOString().split("T")[0];
 
 const isOverdue = (due) => due && new Date(due) < today;
 
-const DEADLINE_COLS = [
-  { id: "today", label: "Aujourd'hui", icon: "📌" },
-  { id: "tomorrow", label: "Demain", icon: "📅" },
-  { id: "week", label: "Cette semaine", icon: "🗓" },
-  { id: "later", label: "Plus tard", icon: "📦" },
+// Priority columns for Kanban
+const PRIORITY_COLS = [
+  { id: "Basse", label: "Basse", icon: "📦" },
+  { id: "Moyenne", label: "Moyenne", icon: "📋" },
+  { id: "Haute", label: "Haute", icon: "🔥" },
 ];
 
-const getDeadlineCol = (due) => {
+const getDueDateFilter = (due) => {
   if (!due) return "later";
-  if (due <= todayStr) return "today"; // includes overdue
+  if (due < todayStr) return "overdue";
+  if (due === todayStr) return "today";
   if (due === tomorrowStr) return "tomorrow";
   if (due <= endOfWeekStr) return "week";
   return "later";
-};
-
-// Target dates when dragging to a column
-const fridayThisWeek = new Date(today);
-fridayThisWeek.setDate(fridayThisWeek.getDate() + (5 - fridayThisWeek.getDay() + 7) % 7 || 7);
-const fridayStr = fridayThisWeek.toISOString().split("T")[0];
-const nextMonday = new Date(today);
-nextMonday.setDate(nextMonday.getDate() + (8 - nextMonday.getDay()) % 7 || 7);
-const nextMondayStr = nextMonday.toISOString().split("T")[0];
-
-const getDropDate = (colId) => {
-  if (colId === "today") return todayStr;
-  if (colId === "tomorrow") return tomorrowStr;
-  if (colId === "week") return fridayStr;
-  if (colId === "later") return nextMondayStr;
-  return todayStr;
 };
 
 // Period aggregation helpers
@@ -165,6 +150,7 @@ export default function App() {
   const [journalDeptFilter, setJournalDeptFilter] = useState("all");
   const [journalTypeFilter, setJournalTypeFilter] = useState("all");
   const [journalScoreFilter, setJournalScoreFilter] = useState("all");
+  const [kanbanDateFilter, setKanbanDateFilter] = useState("all");
 
   // ── LOAD from Supabase on mount ──
   useEffect(() => {
@@ -337,17 +323,14 @@ export default function App() {
     if (targetId !== dragging) setDragOverId(targetId);
   };
 
-  const onKanbanDrop = (targetColId) => {
+  const onKanbanDrop = (targetPriority) => {
     if (!dragging) { setDragOverId(null); return; }
     const task = tasks.find(t => t.id === dragging);
     if (!task) { setDragging(null); setDragOverId(null); return; }
 
-    const currentCol = getDeadlineCol(task.due);
-
-    // Cross-column: update due date
-    if (currentCol !== targetColId) {
-      const newDue = getDropDate(targetColId);
-      const record = { ...task, due: newDue };
+    // Update priority when dropping in a different column
+    if (task.priority !== targetPriority) {
+      const record = { ...task, priority: targetPriority };
       const updated = tasks.map(t => t.id === dragging ? record : t);
       updateTasks(updated);
       syncRecord("tasks", record);
@@ -483,14 +466,25 @@ export default function App() {
           if (projectFilter === "none") kanbanTasks = kanbanTasks.filter(t => !t.project);
           else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
-          if (priorityFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.priority === priorityFilter);
           if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
           if (kanbanSearch.trim()) {
             const q = kanbanSearch.toLowerCase();
             kanbanTasks = kanbanTasks.filter(t => t.name.toLowerCase().includes(q) || (t.notes || "").toLowerCase().includes(q));
           }
+          // Date filter
+          if (kanbanDateFilter !== "all") {
+            kanbanTasks = kanbanTasks.filter(t => getDueDateFilter(t.due) === kanbanDateFilter);
+          }
 
+          // Sort: overdue first, then by custom order within each priority column
           kanbanTasks = [...kanbanTasks].sort((a, b) => {
+            // Primary sort: overdue first
+            const aOverdue = isOverdue(a.due) && a.status !== "Terminé" && a.status !== "Abandonné";
+            const bOverdue = isOverdue(b.due) && b.status !== "Terminé" && b.status !== "Abandonné";
+            if (aOverdue && !bOverdue) return -1;
+            if (!aOverdue && bOverdue) return 1;
+            
+            // Secondary sort: custom kanban order
             const aIdx = kanbanOrder.indexOf(a.id);
             const bIdx = kanbanOrder.indexOf(b.id);
             return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
@@ -503,6 +497,17 @@ export default function App() {
                 <div>
                   <label style={s.label}>Recherche</label>
                   <input style={{ ...s.input, marginBottom: 0, minWidth: 180 }} placeholder="🔍 Rechercher une tâche…" value={kanbanSearch} onChange={e => setKanbanSearch(e.target.value)} />
+                </div>
+                <div>
+                  <label style={s.label}>Échéance</label>
+                  <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={kanbanDateFilter} onChange={e => setKanbanDateFilter(e.target.value)}>
+                    <option value="all">Toutes dates</option>
+                    <option value="overdue">⚠ En retard</option>
+                    <option value="today">📌 Aujourd'hui</option>
+                    <option value="tomorrow">📅 Demain</option>
+                    <option value="week">🗓 Cette semaine</option>
+                    <option value="later">📦 Plus tard</option>
+                  </select>
                 </div>
                 <div>
                   <label style={s.label}>Projet</label>
@@ -526,13 +531,6 @@ export default function App() {
                     {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label style={s.label}>Priorité</label>
-                  <select style={{ ...s.select, marginBottom: 0, minWidth: 130 }} value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
-                    <option value="all">Toutes priorités</option>
-                    {PRIORITIES.map(p => <option key={p} value={p} style={{ color: PRIO_COLOR[p] }}>{p}</option>)}
-                  </select>
-                </div>
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={kanbanShowDone} onChange={e => setKanbanShowDone(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
@@ -542,10 +540,10 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Deadline columns */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, alignItems: "start" }}>
-                {DEADLINE_COLS.map(col => {
-                  const colTasks = kanbanTasks.filter(t => getDeadlineCol(t.due) === col.id);
+              {/* Priority columns */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, alignItems: "start" }}>
+                {PRIORITY_COLS.map(col => {
+                  const colTasks = kanbanTasks.filter(t => t.priority === col.id);
                   return (
                     <div key={col.id} style={s.kanbanCol}
                       onDragOver={e => e.preventDefault()}
@@ -553,29 +551,36 @@ export default function App() {
                       <div style={s.kanbanColHeader}>
                         {col.icon} {col.label} <span style={{ color: "#333", marginLeft: 4 }}>({colTasks.length})</span>
                       </div>
-                      {colTasks.map(task => (
-                        <div key={task.id}
-                          style={{
-                            ...s.taskCard(task.dept),
-                            opacity: dragging === task.id ? 0.4 : 1,
-                            borderTop: dragOverId === task.id ? "2px solid #5b4ef8" : "none",
-                            transition: "opacity 0.15s",
-                          }}
-                          draggable
-                          onDragStart={() => onDragStart(task.id)}
-                          onDragOver={e => onKanbanDragOver(e, task.id)}
-                          onDragEnd={() => { setDragging(null); setDragOverId(null); }}
-                          onClick={() => openModal("task", { ...task })}>
-                          <div style={{ fontSize: 14, color: "#222", marginBottom: 6, lineHeight: 1.4 }}>{task.name}</div>
-                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
-                            <span style={s.tag(getDeptColor(task.dept))}>{getDeptIcon(task.dept)}</span>
-                            <span style={s.tag(PRIO_COLOR[task.priority])}>{task.priority}</span>
-                            <span style={s.tag("#555")}>{STATUS_ICONS[task.status]} {task.status}</span>
-                            {isOverdue(task.due) && task.status !== "Terminé" && task.status !== "Abandonné" && <span style={s.tag("#E85555")}>⚠ Retard</span>}
+                      {colTasks.map(task => {
+                        const taskOverdue = isOverdue(task.due) && task.status !== "Terminé" && task.status !== "Abandonné";
+                        return (
+                          <div key={task.id}
+                            style={{
+                              ...s.taskCard(task.dept),
+                              opacity: dragging === task.id ? 0.4 : 1,
+                              borderTop: dragOverId === task.id ? "2px solid #5b4ef8" : "none",
+                              transition: "opacity 0.15s",
+                              background: taskOverdue ? "#fff5f5" : "#fafafa",
+                            }}
+                            draggable
+                            onDragStart={() => onDragStart(task.id)}
+                            onDragOver={e => onKanbanDragOver(e, task.id)}
+                            onDragEnd={() => { setDragging(null); setDragOverId(null); }}
+                            onClick={() => openModal("task", { ...task })}>
+                            <div style={{ fontSize: 14, color: "#222", marginBottom: 6, lineHeight: 1.4 }}>
+                              {taskOverdue && <span style={{ color: "#E85555", marginRight: 4 }}>⚠</span>}
+                              {task.name}
+                            </div>
+                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                              <span style={s.tag(getDeptColor(task.dept))}>{getDeptIcon(task.dept)}</span>
+                              <span style={s.tag("#555")}>{STATUS_ICONS[task.status]} {task.status}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: taskOverdue ? "#E85555" : "#aaa", marginTop: 6 }}>
+                              {taskOverdue ? `⚠ Retard: ${task.due}` : `Échéance ${task.due || "—"}`}
+                            </div>
                           </div>
-                          <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>Échéance {task.due || "—"}</div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {colTasks.length === 0 && <div style={{ color: "#ddd", fontSize: 13, textAlign: "center", padding: "20px 0" }}>—</div>}
                     </div>
                   );

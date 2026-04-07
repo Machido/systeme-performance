@@ -138,7 +138,7 @@ export default function App() {
   const [satPeriod, setSatPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
   const [cellValue, setCellValue] = useState("");
-  const [kanbanShowDone, setKanbanShowDone] = useState(true);
+  const [kanbanShowDone, setKanbanShowDone] = useState(false);
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");

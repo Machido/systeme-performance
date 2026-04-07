@@ -1242,6 +1242,65 @@ export default function App() {
                       </div>
                     );
                   })()}
+
+                  {/* Habit tracking — logs per habit over time */}
+                  {(() => {
+                    if (!habits.length || !habitLogs.length) return null;
+                    
+                    // Build time series: each date has a count per habit
+                    const dateMap = {};
+                    const habitColors = ["#4A90D9", "#E8A838", "#6BBF6B", "#B07FE8", "#E85555", "#5b4ef8", "#FF6B9D", "#4ECDC4"];
+                    
+                    habitLogs.forEach(log => {
+                      if (!log.completed) return; // Only count successful logs
+                      const date = log.logged_at.split('T')[0]; // YYYY-MM-DD
+                      if (!dateMap[date]) dateMap[date] = { date };
+                      const habit = habits.find(h => h.id === log.habit_id);
+                      if (habit) {
+                        const key = habit.name;
+                        dateMap[date][key] = (dateMap[date][key] || 0) + 1;
+                      }
+                    });
+
+                    const habitTrackingData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
+                    if (!habitTrackingData.length) return null;
+
+                    // Get unique habit names for lines
+                    const habitNames = [...new Set(habitLogs.map(log => {
+                      const habit = habits.find(h => h.id === log.habit_id);
+                      return habit?.name;
+                    }).filter(Boolean))];
+
+                    const toggleStyle3 = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
+
+                    return (
+                      <div style={{ ...chartCard, marginBottom: 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                          <div style={chartTitle}>🎯 Suivi des habitudes — Logs par jour</div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={240}>
+                          <LineChart data={habitTrackingData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} tickFormatter={d => d.slice(5)} />
+                            <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                            <Tooltip />
+                            <Legend wrapperStyle={{ fontSize: 11 }} />
+                            {habitNames.map((name, i) => (
+                              <Line 
+                                key={name} 
+                                type="monotone" 
+                                dataKey={name} 
+                                stroke={habitColors[i % habitColors.length]} 
+                                strokeWidth={2} 
+                                dot={{ r: 3 }} 
+                                activeDot={{ r: 5 }}
+                              />
+                            ))}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    );
+                  })()}
                 </>);
               })()}
 

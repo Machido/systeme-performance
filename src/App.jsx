@@ -152,18 +152,29 @@ export default function App() {
   const [journalScoreFilter, setJournalScoreFilter] = useState("all");
   const [kanbanDateFilter, setKanbanDateFilter] = useState("all");
 
+  // ── HABIT TRACKER STATE ──
+  const [habits, setHabits] = useState([]);
+  const [habitLogs, setHabitLogs] = useState([]);
+  const [habitDeptFilter, setHabitDeptFilter] = useState("all");
+  const [selectedHabit, setSelectedHabit] = useState(null);
+  const [quickLogHabit, setQuickLogHabit] = useState(null);
+
   // ── LOAD from Supabase on mount ──
   useEffect(() => {
     const load = async () => {
       try {
-        const [{ data: p }, { data: t }, { data: j }] = await Promise.all([
+        const [{ data: p }, { data: t }, { data: j }, { data: h }, { data: hl }] = await Promise.all([
           supabase.from("projects").select("*"),
           supabase.from("tasks").select("*"),
           supabase.from("journal").select("*"),
+          supabase.from("habits").select("*"),
+          supabase.from("habit_logs").select("*"),
         ]);
         if (p?.length) setProjects(p);
         if (t?.length) setTasks(t);
         if (j?.length) setJournal(j);
+        if (h?.length) setHabits(h);
+        if (hl?.length) setHabitLogs(hl);
       } catch (e) {}
       setStorageReady(true);
     };
@@ -187,6 +198,107 @@ export default function App() {
   const updateProjects = (val) => setProjects(val);
   const updateTasks = (val) => setTasks(val);
   const updateJournal = (val) => setJournal(val);
+
+  // ── HABIT TRACKER FUNCTIONS ──
+  const updateHabits = (val) => setHabits(val);
+  const updateHabitLogs = (val) => setHabitLogs(val);
+
+  const quickLogHabitNow = async (habitId, completed = true) => {
+    const logId = "HL" + Date.now();
+    const record = {
+      id: logId,
+      habit_id: habitId,
+      user_id: "default",
+      logged_at: new Date().toISOString(),
+      completed,
+      created_at: new Date().toISOString(),
+    };
+    const updated = [...habitLogs, record];
+    updateHabitLogs(updated);
+    await syncRecord("habit_logs", record);
+  };
+
+  const saveHabit = () => {
+    if (!form.name) return;
+    let updated, record;
+    if (form.id) {
+      record = { ...habits.find(h => h.id === form.id), ...form, updated_at: new Date().toISOString() };
+      updated = habits.map(h => h.id === form.id ? record : h);
+    } else {
+      const id = "H" + Date.now();
+      record = {
+        ...form,
+        id,
+        user_id: "default",
+        habit_type: form.habit_type || "acquire",
+        icon: form.icon || (form.habit_type === "acquire" ? "✅" : "❌"),
+        target_days: form.target_days || 60,
+        allowed_misses: form.allowed_misses || 0,
+        archived: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      updated = [...habits, record];
+    }
+    updateHabits(updated);
+    syncRecord("habits", record);
+    setShowModal(null);
+  };
+
+  const saveHabitLog = () => {
+    if (!quickLogHabit) return;
+    const logId = "HL" + Date.now();
+    const record = {
+      id: logId,
+      habit_id: quickLogHabit.id,
+      user_id: "default",
+      logged_at: form.logged_at || new Date().toISOString(),
+      completed: form.completed !== undefined ? form.completed : true,
+      note: form.note || null,
+      time_spent_minutes: form.time_spent_minutes || null,
+      temp: form.temp || null,
+      created_at: new Date().toISOString(),
+    };
+    const updated = [...habitLogs, record];
+    updateHabitLogs(updated);
+    syncRecord("habit_logs", record);
+    setQuickLogHabit(null);
+    setForm({});
+  };
+
+  const getHabitStreak = (habitId) => {
+    const logs = habitLogs
+      .filter(l => l.habit_id === habitId && l.completed)
+      .sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at));
+    if (!logs.length) return 0;
+    let streak = 0;
+    const now = new Date();
+    for (let i = 0; i < logs.length; i++) {
+      const logDate = new Date(logs[i].logged_at);
+      logDate.setHours(0, 0, 0, 0);
+      const daysDiff = Math.floor((now - logDate) / (1000 * 60 * 60 * 24));
+      if (daysDiff === i) streak++;
+      else break;
+    }
+    return streak;
+  };
+
+  const getHabitCompletionLast7Days = (habitId) => {
+    const last7 = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      d.setHours(0, 0, 0, 0);
+      const dateStr = d.toISOString().split("T")[0];
+      const logged = habitLogs.some(l => {
+        const logDate = new Date(l.logged_at);
+        logDate.setHours(0, 0, 0, 0);
+        return l.habit_id === habitId && l.completed && logDate.toISOString().split("T")[0] === dateStr;
+      });
+      last7.push(logged);
+    }
+    return last7;
+  };
 
   // ── Export CSV ──
   const exportCSV = (data, filename) => {
@@ -452,7 +564,7 @@ export default function App() {
 
       {/* Tabs */}
       <div style={s.tabs}>
-        {[["kanban", "🗂 Kanban"], ["home", "🏠 Accueil"], ["projects", "📁 Projets"], ["dashboard", "📊 Dashboard"], ["journal", "📝 Journal"], ["data", "🗄 Données"]].map(([id, label]) => (
+        {[["kanban", "🗂 Kanban"], ["home", "🏠 Accueil"], ["habits", "🎯 Habitudes"], ["projects", "📁 Projets"], ["dashboard", "📊 Dashboard"], ["journal", "📝 Journal"], ["data", "🗄 Données"]].map(([id, label]) => (
           <button key={id} style={s.tabBtn(tab === id)} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
@@ -707,6 +819,247 @@ export default function App() {
             })}
           </div>
         )}
+
+        {/* ── HABITUDES ── */}
+        {tab === "habits" && (() => {
+          const activeHabits = habits.filter(h => !h.archived);
+          const filteredHabits = habitDeptFilter === "all" ? activeHabits : activeHabits.filter(h => h.department_id === habitDeptFilter);
+          
+          // Group by department
+          const habitsByDept = DEPTS.map(dept => ({
+            ...dept,
+            habits: filteredHabits.filter(h => h.department_id === dept.id),
+          })).filter(d => d.habits.length > 0);
+          
+          const ungrouped = filteredHabits.filter(h => !h.department_id);
+
+          // Today's habits for quick dashboard
+          const todayStr = new Date().toISOString().split("T")[0];
+          const todayLogs = habitLogs.filter(l => {
+            const logDate = new Date(l.logged_at).toISOString().split("T")[0];
+            return logDate === todayStr;
+          });
+          const todayComplete = todayLogs.filter(l => l.completed).length;
+
+          return (
+            <div>
+              <div style={{ ...s.sectionTitle, marginBottom: 16 }}>
+                <span>HABITUDES — SUIVI</span>
+                <button style={s.btn("primary")} onClick={() => {
+                  setForm({ habit_type: "acquire", target_days: 60, allowed_misses: 0, icon: "✅" });
+                  setShowModal("habit");
+                }}>+ Nouvelle habitude</button>
+              </div>
+
+              {/* Today's Quick Dashboard */}
+              <div style={{ ...s.card, marginBottom: 24, background: "#f9f9ff", border: "1px solid #e0e0ff" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#5b4ef8" }}>
+                  📅 Aujourd'hui — {todayStr}
+                </div>
+                <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>
+                  {todayComplete}/{activeHabits.length} habitudes complétées {activeHabits.length > 0 && `(${Math.round((todayComplete / activeHabits.length) * 100)}%)`}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {activeHabits.map(habit => {
+                    const logged = todayLogs.some(l => l.habit_id === habit.id && l.completed);
+                    return (
+                      <button
+                        key={habit.id}
+                        onClick={() => !logged && quickLogHabitNow(habit.id)}
+                        style={{
+                          padding: "8px 14px",
+                          borderRadius: 8,
+                          border: logged ? "2px solid #6BBF6B" : "1px solid #ddd",
+                          background: logged ? "#e8f5e9" : "#fff",
+                          cursor: logged ? "default" : "pointer",
+                          fontSize: 13,
+                          color: logged ? "#6BBF6B" : "#222",
+                          fontWeight: logged ? 600 : 400,
+                          transition: "all 0.2s",
+                        }}
+                        title={logged ? "Déjà fait aujourd'hui" : "Cliquer pour marquer comme fait"}>
+                        {habit.icon} {habit.name} {logged && "✓"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Department filter */}
+              <div style={{ marginBottom: 16, display: "flex", gap: 8, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "#aaa" }}>Département:</span>
+                <button style={s.deptBtn(habitDeptFilter === "all")} onClick={() => setHabitDeptFilter("all")}>Tous</button>
+                {DEPTS.map(d => (
+                  <button key={d.id} style={s.deptBtn(habitDeptFilter === d.id)} onClick={() => setHabitDeptFilter(d.id)}>
+                    {d.icon} {d.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Habits by department */}
+              {habitsByDept.map(dept => (
+                <div key={dept.id} style={s.section}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: dept.color, marginBottom: 10 }}>
+                    {dept.icon} {dept.label.toUpperCase()}
+                  </div>
+                  {dept.habits.map(habit => {
+                    const streak = getHabitStreak(habit.id);
+                    const last7 = getHabitCompletionLast7Days(habit.id);
+                    const progress = Math.round((streak / habit.target_days) * 100);
+                    const typeIcon = habit.habit_type === "acquire" ? "🟢" : "🔴";
+                    return (
+                      <div key={habit.id} style={{ ...s.card, marginBottom: 12, borderLeft: `3px solid ${dept.color}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                          <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
+                              {habit.icon} {habit.name} {typeIcon}
+                            </div>
+                            {habit.description && (
+                              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{habit.description}</div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setQuickLogHabit(habit);
+                              setForm({ logged_at: new Date().toISOString(), completed: true });
+                              setShowModal("habitLog");
+                            }}
+                            style={{
+                              ...s.btn("primary"),
+                              padding: "6px 12px",
+                              fontSize: 13,
+                            }}>
+                            ✓ Log
+                          </button>
+                        </div>
+
+                        {/* Streak & Progress */}
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 8 }}>
+                          <div>
+                            <span style={{ fontSize: 11, color: "#aaa" }}>Série:</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: streak > 0 ? "#E85555" : "#888", marginLeft: 4 }}>
+                              {streak} jours {streak > 0 && "🔥"}
+                            </span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 11, color: "#aaa" }}>Objectif: {habit.target_days} jours</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ background: "#f0f0f0", borderRadius: 4, height: 6 }}>
+                              <div style={{ width: `${Math.min(progress, 100)}%`, height: "100%", background: dept.color, borderRadius: 4, transition: "width 0.3s" }} />
+                            </div>
+                            <span style={{ fontSize: 10, color: "#aaa" }}>{progress}%</span>
+                          </div>
+                        </div>
+
+                        {/* Last 7 days */}
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <span style={{ fontSize: 11, color: "#aaa", marginRight: 4 }}>7 derniers jours:</span>
+                          {last7.map((done, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: 4,
+                                background: done ? dept.color : "#f0f0f0",
+                                border: done ? "none" : "1px solid #ddd",
+                              }}
+                              title={done ? "Fait" : "Manqué"}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+
+              {/* Ungrouped habits */}
+              {ungrouped.length > 0 && (
+                <div style={s.section}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#888", marginBottom: 10 }}>
+                    SANS DÉPARTEMENT
+                  </div>
+                  {ungrouped.map(habit => {
+                    const streak = getHabitStreak(habit.id);
+                    const last7 = getHabitCompletionLast7Days(habit.id);
+                    const progress = Math.round((streak / habit.target_days) * 100);
+                    const typeIcon = habit.habit_type === "acquire" ? "🟢" : "🔴";
+                    return (
+                      <div key={habit.id} style={{ ...s.card, marginBottom: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                          <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
+                              {habit.icon} {habit.name} {typeIcon}
+                            </div>
+                            {habit.description && (
+                              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{habit.description}</div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setQuickLogHabit(habit);
+                              setForm({ logged_at: new Date().toISOString(), completed: true });
+                              setShowModal("habitLog");
+                            }}
+                            style={{
+                              ...s.btn("primary"),
+                              padding: "6px 12px",
+                              fontSize: 13,
+                            }}>
+                            ✓ Log
+                          </button>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 8 }}>
+                          <div>
+                            <span style={{ fontSize: 11, color: "#aaa" }}>Série:</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: streak > 0 ? "#E85555" : "#888", marginLeft: 4 }}>
+                              {streak} jours {streak > 0 && "🔥"}
+                            </span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 11, color: "#aaa" }}>Objectif: {habit.target_days} jours</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ background: "#f0f0f0", borderRadius: 4, height: 6 }}>
+                              <div style={{ width: `${Math.min(progress, 100)}%`, height: "100%", background: "#888", borderRadius: 4, transition: "width 0.3s" }} />
+                            </div>
+                            <span style={{ fontSize: 10, color: "#aaa" }}>{progress}%</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <span style={{ fontSize: 11, color: "#aaa", marginRight: 4 }}>7 derniers jours:</span>
+                          {last7.map((done, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: 4,
+                                background: done ? "#888" : "#f0f0f0",
+                                border: done ? "none" : "1px solid #ddd",
+                              }}
+                              title={done ? "Fait" : "Manqué"}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {filteredHabits.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: "#aaa" }}>
+                  Aucune habitude trouvée. Créez-en une pour commencer !
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── DASHBOARD ── */}
         {tab === "dashboard" && (() => {
@@ -1224,7 +1577,11 @@ export default function App() {
           <div style={s.modalBox}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                {showModal === "task" ? (form.id ? "Modifier tâche" : "Nouvelle tâche") : showModal === "journal" ? (form.id ? "Modifier entrée journal" : "Nouvelle entrée journal") : showModal === "project" ? (form.id ? "Modifier projet" : "Nouveau projet") : ""}
+                {showModal === "task" ? (form.id ? "Modifier tâche" : "Nouvelle tâche") : 
+                 showModal === "journal" ? (form.id ? "Modifier entrée journal" : "Nouvelle entrée journal") : 
+                 showModal === "project" ? (form.id ? "Modifier projet" : "Nouveau projet") :
+                 showModal === "habit" ? (form.id ? "Modifier habitude" : "Nouvelle habitude") :
+                 showModal === "habitLog" ? "Logger habitude" : ""}
               </div>
               <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => setShowModal(null)}>×</button>
             </div>
@@ -1418,6 +1775,107 @@ export default function App() {
                     <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
                     <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
                   </div>
+                </div>
+              </>
+            )}
+
+            {showModal === "habit" && (
+              <>
+                <label style={s.label}>Nom de l'habitude</label>
+                <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ex: Méditer 10 minutes" />
+
+                <label style={s.label}>Description (optionnel)</label>
+                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Détails ou notes..." />
+
+                <div style={s.row}>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Type</label>
+                    <select style={s.select} value={form.habit_type || "acquire"} onChange={e => setForm({ ...form, habit_type: e.target.value })}>
+                      <option value="acquire">🟢 Acquérir (construire)</option>
+                      <option value="eliminate">🔴 Éliminer (arrêter)</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Icône/Emoji</label>
+                    <input style={s.input} value={form.icon || ""} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="✅" />
+                  </div>
+                </div>
+
+                <label style={s.label}>Département</label>
+                <select style={s.select} value={form.department_id || ""} onChange={e => setForm({ ...form, department_id: e.target.value })}>
+                  <option value="">— Sans département —</option>
+                  {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                </select>
+
+                <div style={s.row}>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Objectif (jours)</label>
+                    <input type="number" style={s.input} value={form.target_days || 60} onChange={e => setForm({ ...form, target_days: parseInt(e.target.value) || 60 })} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Manqués autorisés</label>
+                    <input type="number" style={s.input} value={form.allowed_misses || 0} onChange={e => setForm({ ...form, allowed_misses: parseInt(e.target.value) || 0 })} />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
+                  <div>
+                    {form.id && <button style={s.btnDanger} onClick={() => { if (window.confirm("Archiver cette habitude ?")) { const record = { ...habits.find(h => h.id === form.id), archived: true }; updateHabits(habits.map(h => h.id === form.id ? record : h)); syncRecord("habits", record); setShowModal(null); } }}>🗃 Archiver</button>}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
+                    <button style={s.btn("primary")} onClick={saveHabit}>Enregistrer</button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {showModal === "habitLog" && quickLogHabit && (
+              <>
+                <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
+                  {quickLogHabit.icon} {quickLogHabit.name}
+                </div>
+
+                <label style={s.label}>Date & heure</label>
+                <input type="datetime-local" style={s.input} value={form.logged_at ? new Date(form.logged_at).toISOString().slice(0, 16) : ""} onChange={e => setForm({ ...form, logged_at: new Date(e.target.value).toISOString() })} />
+
+                <label style={s.label}>Statut</label>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                  <button
+                    onClick={() => setForm({ ...form, completed: true })}
+                    style={{
+                      ...s.btn(form.completed ? "primary" : "ghost"),
+                      flex: 1,
+                    }}>
+                    ✅ Fait
+                  </button>
+                  <button
+                    onClick={() => setForm({ ...form, completed: false })}
+                    style={{
+                      ...s.btn(form.completed === false ? "primary" : "ghost"),
+                      flex: 1,
+                    }}>
+                    ❌ Manqué
+                  </button>
+                </div>
+
+                <label style={s.label}>Note (optionnel)</label>
+                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.note || ""} onChange={e => setForm({ ...form, note: e.target.value })} placeholder={form.completed === false ? "Pourquoi avez-vous manqué ?" : "Contexte ou observations..."} />
+
+                <div style={s.row}>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Temps passé (minutes)</label>
+                    <input type="number" style={s.input} value={form.time_spent_minutes || ""} onChange={e => setForm({ ...form, time_spent_minutes: parseInt(e.target.value) || null })} placeholder="Ex: 30" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Temp (1-10)</label>
+                    <input type="number" min="1" max="10" style={s.input} value={form.temp || ""} onChange={e => setForm({ ...form, temp: parseInt(e.target.value) || null })} placeholder="Humeur" />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+                  <button style={s.btn("ghost")} onClick={() => { setShowModal(null); setQuickLogHabit(null); }}>Annuler</button>
+                  <button style={s.btn("primary")} onClick={saveHabitLog}>Enregistrer</button>
                 </div>
               </>
             )}

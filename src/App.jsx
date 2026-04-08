@@ -995,7 +995,7 @@ export default function App() {
                               onClick={() => {
                                 setQuickLogHabit(habit);
                                 setForm({ logged_at: new Date().toISOString(), completed: true });
-                                setShowModal("habitLog");
+                                setTimeout(() => setShowModal("habitLog"), 10);
                               }}
                               style={{
                                 ...s.btn("primary"),
@@ -1108,7 +1108,7 @@ export default function App() {
                               onClick={() => {
                                 setQuickLogHabit(habit);
                                 setForm({ logged_at: new Date().toISOString(), completed: true });
-                                setShowModal("habitLog");
+                                setTimeout(() => setShowModal("habitLog"), 10);
                               }}
                               style={{
                                 ...s.btn("primary"),

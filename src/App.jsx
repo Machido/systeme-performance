@@ -1991,6 +1991,14 @@ export default function App() {
                 <label style={s.label}>Description</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
 
+                <label style={s.label}>Projet (optionnel)</label>
+                <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
+                  <option value="">— Sans projet —</option>
+                  {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
+                    <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
+                  ))}
+                </select>
+
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Département</label>

@@ -137,6 +137,7 @@ export default function App() {
   const [veloPeriod, setVeloPeriod] = useState("daily");
   const [satPeriod, setSatPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
+  const [selectedRows, setSelectedRows] = useState(new Set());
   const [cellValue, setCellValue] = useState("");
   const [kanbanShowDone, setKanbanShowDone] = useState(false);
   const [projectFilter, setProjectFilter] = useState("all");
@@ -1722,12 +1723,22 @@ export default function App() {
                   {Object.entries(tables).map(([key, t]) => (
                     <button key={key}
                       style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: dataTab === key ? "#fff" : "transparent", color: dataTab === key ? "#222" : "#aaa", cursor: "pointer", fontSize: 13, fontFamily: "sans-serif", fontWeight: dataTab === key ? 600 : 400, boxShadow: dataTab === key ? "0 1px 3px #0001" : "none", transition: "all 0.15s" }}
-                      onClick={() => { setDataTab(key); setEditingCell(null); }}>
+                      onClick={() => { setDataTab(key); setEditingCell(null); setSelectedRows(new Set()); }}>
                       {t.label} <span style={{ color: "#aaa", fontWeight: 400 }}>({t.data.length})</span>
                     </button>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {selectedRows.size > 0 && (
+                    <button style={s.btn("danger")} onClick={async () => {
+                      if (window.confirm(`Supprimer ${selectedRows.size} ligne(s) ?`)) {
+                        for (const id of selectedRows) {
+                          await deleteRow(dataTab, id);
+                        }
+                        setSelectedRows(new Set());
+                      }
+                    }}>🗑 Supprimer ({selectedRows.size})</button>
+                  )}
                   <button style={s.btn("ghost")} onClick={() => exportCSV(data, `${dataTab}.csv`)}>↓ Export CSV</button>
                   <button style={s.btn("primary")} onClick={() => {
                     if (dataTab === "projects") openModal("project", { status: "Potentiel", dept: "ops", estHours: 0, revenue: 0 });
@@ -1744,13 +1755,31 @@ export default function App() {
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr>
+                        <th style={{ ...thStyle, width: 30, textAlign: "center" }}>
+                          <input type="checkbox" 
+                            checked={data.length > 0 && selectedRows.size === data.length}
+                            onChange={e => {
+                              if (e.target.checked) setSelectedRows(new Set(data.map(r => r.id)));
+                              else setSelectedRows(new Set());
+                            }} />
+                        </th>
                         {cols.map(col => <th key={col.key} style={{ ...thStyle, width: col.w }}>{col.label}</th>)}
                         <th style={{ ...thStyle, width: 40 }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.map((row, i) => (
-                        <tr key={row.id} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                        <tr key={row.id} style={{ background: selectedRows.has(row.id) ? "#f0eeff" : i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                          <td style={{ ...tdStyle(false), textAlign: "center" }}>
+                            <input type="checkbox"
+                              checked={selectedRows.has(row.id)}
+                              onChange={e => {
+                                const next = new Set(selectedRows);
+                                if (e.target.checked) next.add(row.id);
+                                else next.delete(row.id);
+                                setSelectedRows(next);
+                              }} />
+                          </td>
                           {cols.map(col => (
                             <td key={col.key} style={tdStyle(!col.readonly)}>
                               <CellDisplay row={row} col={col} />

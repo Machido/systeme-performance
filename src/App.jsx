@@ -291,12 +291,12 @@ export default function App() {
       d.setDate(d.getDate() - i);
       d.setHours(0, 0, 0, 0);
       const dateStr = d.toISOString().split("T")[0];
-      const logged = habitLogs.some(l => {
+      const count = habitLogs.filter(l => {
         const logDate = new Date(l.logged_at);
         logDate.setHours(0, 0, 0, 0);
         return l.habit_id === habitId && l.completed && logDate.toISOString().split("T")[0] === dateStr;
-      });
-      last7.push(logged);
+      }).length;
+      last7.push(count);
     }
     return last7;
   };
@@ -1034,18 +1034,25 @@ export default function App() {
                         {/* Last 7 days */}
                         <div style={{ display: "flex", gap: 4 }}>
                           <span style={{ fontSize: 11, color: "#aaa", marginRight: 4 }}>7 derniers jours:</span>
-                          {last7.map((done, idx) => (
+                          {last7.map((count, idx) => (
                             <div
                               key={idx}
                               style={{
-                                width: 20,
-                                height: 20,
+                                width: 24,
+                                height: 24,
                                 borderRadius: 4,
-                                background: done ? dept.color : "#f0f0f0",
-                                border: done ? "none" : "1px solid #ddd",
+                                background: count > 0 ? dept.color : "#f0f0f0",
+                                border: count > 0 ? "none" : "1px solid #ddd",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: count > 0 ? "#fff" : "transparent",
                               }}
-                              title={done ? "Fait" : "Manqué"}
-                            />
+                              title={count > 0 ? `${count}× ce jour` : "Manqué"}>
+                              {count > 0 ? count : ""}
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -1148,18 +1155,25 @@ export default function App() {
 
                         <div style={{ display: "flex", gap: 4 }}>
                           <span style={{ fontSize: 11, color: "#aaa", marginRight: 4 }}>7 derniers jours:</span>
-                          {last7.map((done, idx) => (
+                          {last7.map((count, idx) => (
                             <div
                               key={idx}
                               style={{
-                                width: 20,
-                                height: 20,
+                                width: 24,
+                                height: 24,
                                 borderRadius: 4,
-                                background: done ? "#888" : "#f0f0f0",
-                                border: done ? "none" : "1px solid #ddd",
+                                background: count > 0 ? "#888" : "#f0f0f0",
+                                border: count > 0 ? "none" : "1px solid #ddd",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: count > 0 ? "#fff" : "transparent",
                               }}
-                              title={done ? "Fait" : "Manqué"}
-                            />
+                              title={count > 0 ? `${count}× ce jour` : "Manqué"}>
+                              {count > 0 ? count : ""}
+                            </div>
                           ))}
                         </div>
                       </div>

@@ -309,6 +309,30 @@ export default function App() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
   };
 
+  // ── Export All Data (Backup) ──
+  const exportAllData = () => {
+    const timestamp = new Date().toISOString().split("T")[0];
+    const tables = [
+      { name: "projects", data: projects },
+      { name: "tasks", data: tasks },
+      { name: "journal", data: journal },
+      { name: "habits", data: habits },
+      { name: "habit_logs", data: habitLogs },
+    ];
+    
+    let exported = [];
+    tables.forEach(({ name, data }, index) => {
+      if (data.length > 0) {
+        setTimeout(() => exportCSV(data, `${timestamp}_${name}.csv`), index * 200);
+        exported.push(`- ${timestamp}_${name}.csv`);
+      }
+    });
+    
+    setTimeout(() => {
+      alert(`✅ Export complet lancé!\n\nFichiers téléchargés:\n${exported.join("\n")}`);
+    }, tables.length * 200 + 100);
+  };
+
   const filteredTasks = useMemo(() =>
     deptFilter === "all" ? tasks : tasks.filter(t => t.dept === deptFilter),
     [tasks, deptFilter]
@@ -554,6 +578,12 @@ export default function App() {
               {d.icon} {d.label}
             </button>
           ))}
+          <button 
+            style={{ ...s.btn("secondary"), marginLeft: "auto", padding: "6px 12px", fontSize: 13 }}
+            onClick={exportAllData}
+            title="Télécharger une sauvegarde complète (CSV)">
+            💾 Backup
+          </button>
         </div>
       </div>
 

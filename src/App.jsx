@@ -246,11 +246,11 @@ export default function App() {
   };
 
   const saveHabitLog = async () => {
-    if (!quickLogHabit) return;
+    if (!form._habit) return;
     const logId = "HL" + Date.now();
     const record = {
       id: logId,
-      habit_id: quickLogHabit.id,
+      habit_id: form._habit.id,
       user_id: "default",
       logged_at: form.logged_at || new Date().toISOString(),
       completed: form.completed !== undefined ? form.completed : true,
@@ -262,7 +262,7 @@ export default function App() {
     const updated = [...habitLogs, record];
     updateHabitLogs(updated);
     await syncRecord("habit_logs", record);
-    setQuickLogHabit(null);
+    setShowModal(null);
     setForm({});
   };
 
@@ -993,9 +993,12 @@ export default function App() {
                             </button>
                             <button
                               onClick={() => {
-                                setQuickLogHabit(habit);
-                                setForm({ logged_at: new Date().toISOString(), completed: true });
-                                setTimeout(() => setShowModal("habitLog"), 10);
+                                setForm({ 
+                                  _habit: habit,
+                                  logged_at: new Date().toISOString(), 
+                                  completed: true 
+                                });
+                                setShowModal("habitLog");
                               }}
                               style={{
                                 ...s.btn("primary"),
@@ -1106,9 +1109,12 @@ export default function App() {
                             </button>
                             <button
                               onClick={() => {
-                                setQuickLogHabit(habit);
-                                setForm({ logged_at: new Date().toISOString(), completed: true });
-                                setTimeout(() => setShowModal("habitLog"), 10);
+                                setForm({ 
+                                  _habit: habit,
+                                  logged_at: new Date().toISOString(), 
+                                  completed: true 
+                                });
+                                setShowModal("habitLog");
                               }}
                               style={{
                                 ...s.btn("primary"),
@@ -2041,14 +2047,14 @@ export default function App() {
 
             {showModal === "habitLog" && (
               <>
-                {!quickLogHabit ? (
+                {!form._habit ? (
                   <div style={{ padding: 20, textAlign: "center", color: "#888" }}>
                     Erreur: Aucune habitude sélectionnée
                   </div>
                 ) : (
                   <>
                     <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
-                      {quickLogHabit.icon} {quickLogHabit.name}
+                      {form._habit.icon} {form._habit.name}
                     </div>
 
                 <label style={s.label}>Date & heure</label>
@@ -2089,7 +2095,7 @@ export default function App() {
                 </div>
 
                     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-                      <button style={s.btn("ghost")} onClick={() => { setShowModal(null); setQuickLogHabit(null); }}>Annuler</button>
+                      <button style={s.btn("ghost")} onClick={() => { setShowModal(null); setForm({}); }}>Annuler</button>
                       <button style={s.btn("primary")} onClick={saveHabitLog}>Enregistrer</button>
                     </div>
                   </>

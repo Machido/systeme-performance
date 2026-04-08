@@ -218,7 +218,7 @@ export default function App() {
     await syncRecord("habit_logs", record);
   };
 
-  const saveHabit = () => {
+  const saveHabit = async () => {
     if (!form.name) return;
     let updated, record;
     if (form.id) {
@@ -241,11 +241,11 @@ export default function App() {
       updated = [...habits, record];
     }
     updateHabits(updated);
-    syncRecord("habits", record);
+    await syncRecord("habits", record);
     setShowModal(null);
   };
 
-  const saveHabitLog = () => {
+  const saveHabitLog = async () => {
     if (!quickLogHabit) return;
     const logId = "HL" + Date.now();
     const record = {
@@ -261,7 +261,7 @@ export default function App() {
     };
     const updated = [...habitLogs, record];
     updateHabitLogs(updated);
-    syncRecord("habit_logs", record);
+    await syncRecord("habit_logs", record);
     setQuickLogHabit(null);
     setForm({});
   };

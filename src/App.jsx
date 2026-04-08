@@ -2039,11 +2039,17 @@ export default function App() {
               </>
             )}
 
-            {showModal === "habitLog" && quickLogHabit && (
+            {showModal === "habitLog" && (
               <>
-                <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
-                  {quickLogHabit.icon} {quickLogHabit.name}
-                </div>
+                {!quickLogHabit ? (
+                  <div style={{ padding: 20, textAlign: "center", color: "#888" }}>
+                    Erreur: Aucune habitude sélectionnée
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
+                      {quickLogHabit.icon} {quickLogHabit.name}
+                    </div>
 
                 <label style={s.label}>Date & heure</label>
                 <input type="datetime-local" style={s.input} value={form.logged_at ? new Date(form.logged_at).toISOString().slice(0, 16) : ""} onChange={e => setForm({ ...form, logged_at: new Date(e.target.value).toISOString() })} />
@@ -2082,10 +2088,12 @@ export default function App() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-                  <button style={s.btn("ghost")} onClick={() => { setShowModal(null); setQuickLogHabit(null); }}>Annuler</button>
-                  <button style={s.btn("primary")} onClick={saveHabitLog}>Enregistrer</button>
-                </div>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+                      <button style={s.btn("ghost")} onClick={() => { setShowModal(null); setQuickLogHabit(null); }}>Annuler</button>
+                      <button style={s.btn("primary")} onClick={saveHabitLog}>Enregistrer</button>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>

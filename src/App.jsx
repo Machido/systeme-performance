@@ -953,6 +953,11 @@ export default function App() {
                           <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
                             <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
                               {habit.icon} {habit.name} {typeIcon}
+                              {habit.project_id && (
+                                <span style={{ fontSize: 11, color: "#888", fontWeight: 400, marginLeft: 8 }}>
+                                  📁 {projects.find(p => p.id === habit.project_id)?.name || habit.project_id}
+                                </span>
+                              )}
                             </div>
                             {habit.description && (
                               <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{habit.description}</div>
@@ -1061,6 +1066,11 @@ export default function App() {
                           <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
                             <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
                               {habit.icon} {habit.name} {typeIcon}
+                              {habit.project_id && (
+                                <span style={{ fontSize: 11, color: "#888", fontWeight: 400, marginLeft: 8 }}>
+                                  📁 {projects.find(p => p.id === habit.project_id)?.name || habit.project_id}
+                                </span>
+                              )}
                             </div>
                             {habit.description && (
                               <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{habit.description}</div>
@@ -1627,6 +1637,7 @@ export default function App() {
                 { key: "name", label: "Nom", w: 180 },
                 { key: "description", label: "Description", w: 200 },
                 { key: "department_id", label: "Dept", w: 80, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon + " " + d.label })) },
+                { key: "project_id", label: "Projet", w: 80, type: "select", options: [{ value: "", label: "—" }, ...projects.map(p => ({ value: p.id, label: p.id }))] },
                 { key: "habit_type", label: "Type", w: 90, type: "select", options: [{ value: "acquire", label: "🟢 Acquérir" }, { value: "eliminate", label: "🔴 Éliminer" }] },
                 { key: "icon", label: "Icône", w: 60 },
                 { key: "target_days", label: "Jours cible", w: 90, type: "number" },
@@ -1988,11 +1999,22 @@ export default function App() {
                   </div>
                 </div>
 
-                <label style={s.label}>Département</label>
-                <select style={s.select} value={form.department_id || ""} onChange={e => setForm({ ...form, department_id: e.target.value })}>
-                  <option value="">— Sans département —</option>
-                  {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
-                </select>
+                <div style={s.row}>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Département</label>
+                    <select style={s.select} value={form.department_id || ""} onChange={e => setForm({ ...form, department_id: e.target.value })}>
+                      <option value="">— Sans département —</option>
+                      {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={s.label}>Projet (optionnel)</label>
+                    <select style={s.select} value={form.project_id || ""} onChange={e => setForm({ ...form, project_id: e.target.value })}>
+                      <option value="">— Sans projet —</option>
+                      {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
+                    </select>
+                  </div>
+                </div>
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

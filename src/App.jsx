@@ -523,9 +523,9 @@ export default function App() {
     btn: (variant = "primary") => ({
       padding: "8px 16px",
       borderRadius: 8,
-      border: variant === "ghost" ? "1px solid #ddd" : "none",
-      background: variant === "primary" ? "#5b4ef8" : variant === "ghost" ? "#fff" : "#f0f0f0",
-      color: variant === "primary" ? "#fff" : "#222",
+      border: variant === "ghost" ? "1px solid #ddd" : variant === "secondary" ? "1px solid #ddd" : variant === "danger" ? "1px solid #ffd0d0" : "none",
+      background: variant === "primary" ? "#5b4ef8" : variant === "ghost" ? "#fff" : variant === "secondary" ? "#f0f0f0" : variant === "danger" ? "#fff5f5" : "#f0f0f0",
+      color: variant === "primary" ? "#fff" : variant === "danger" ? "#E85555" : "#222",
       cursor: "pointer",
       fontSize: 14,
       fontFamily: "sans-serif",
@@ -918,19 +918,48 @@ export default function App() {
                               <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{habit.description}</div>
                             )}
                           </div>
-                          <button
-                            onClick={() => {
-                              setQuickLogHabit(habit);
-                              setForm({ logged_at: new Date().toISOString(), completed: true });
-                              setShowModal("habitLog");
-                            }}
-                            style={{
-                              ...s.btn("primary"),
-                              padding: "6px 12px",
-                              fontSize: 13,
-                            }}>
-                            ✓ Log
-                          </button>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              onClick={() => {
+                                setForm({ ...habit });
+                                setShowModal("habit");
+                              }}
+                              style={{
+                                ...s.btn("secondary"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              ✏️ Modifier
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Supprimer "${habit.name}" et tous ses logs ?`)) {
+                                  const updated = habits.filter(h => h.id !== habit.id);
+                                  updateHabits(updated);
+                                  await supabase.from("habits").delete().eq("id", habit.id);
+                                }
+                              }}
+                              style={{
+                                ...s.btn("danger"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              🗑️
+                            </button>
+                            <button
+                              onClick={() => {
+                                setQuickLogHabit(habit);
+                                setForm({ logged_at: new Date().toISOString(), completed: true });
+                                setShowModal("habitLog");
+                              }}
+                              style={{
+                                ...s.btn("primary"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              ✓ Log
+                            </button>
+                          </div>
                         </div>
 
                         {/* Streak & Progress */}

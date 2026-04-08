@@ -1066,19 +1066,48 @@ export default function App() {
                               <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{habit.description}</div>
                             )}
                           </div>
-                          <button
-                            onClick={() => {
-                              setQuickLogHabit(habit);
-                              setForm({ logged_at: new Date().toISOString(), completed: true });
-                              setShowModal("habitLog");
-                            }}
-                            style={{
-                              ...s.btn("primary"),
-                              padding: "6px 12px",
-                              fontSize: 13,
-                            }}>
-                            ✓ Log
-                          </button>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              onClick={() => {
+                                setForm({ ...habit });
+                                setShowModal("habit");
+                              }}
+                              style={{
+                                ...s.btn("secondary"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              ✏️ Modifier
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Supprimer "${habit.name}" et tous ses logs ?`)) {
+                                  const updated = habits.filter(h => h.id !== habit.id);
+                                  updateHabits(updated);
+                                  await supabase.from("habits").delete().eq("id", habit.id);
+                                }
+                              }}
+                              style={{
+                                ...s.btn("danger"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              🗑️
+                            </button>
+                            <button
+                              onClick={() => {
+                                setQuickLogHabit(habit);
+                                setForm({ logged_at: new Date().toISOString(), completed: true });
+                                setShowModal("habitLog");
+                              }}
+                              style={{
+                                ...s.btn("primary"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              ✓ Log
+                            </button>
+                          </div>
                         </div>
 
                         <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 8 }}>

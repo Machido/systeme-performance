@@ -491,13 +491,13 @@ export default function App() {
     setEditingCell({ table, id, field });
     setCellValue(String(value ?? ""));
   };
-  const commitEdit = () => {
+  const commitEdit = async () => {
     if (!editingCell) return;
     const { table, id, field } = editingCell;
     if (table === "projects") {
       const record = { ...projects.find(p => p.id === id), [field]: cellValue };
       updateProjects(projects.map(p => p.id === id ? record : p));
-      syncRecord("projects", record);
+      await syncRecord("projects", record);
     } else if (table === "tasks") {
       const prev = tasks.find(t => t.id === id);
       const record = { ...prev, [field]: cellValue };
@@ -505,19 +505,29 @@ export default function App() {
       if (field === "status" && cellValue === "Terminé" && prev.status !== "Terminé" && !prev.completedDate) record.completedDate = todayStr;
       if (field === "status" && cellValue !== "Terminé" && prev.status === "Terminé") record.completedDate = null;
       updateTasks(tasks.map(t => t.id === id ? record : t));
-      syncRecord("tasks", record);
+      await syncRecord("tasks", record);
     } else if (table === "journal") {
       const record = { ...journal.find(j => j.id === id), [field]: cellValue };
       updateJournal(journal.map(j => j.id === id ? record : j));
-      syncRecord("journal", record);
+      await syncRecord("journal", record);
+    } else if (table === "habits") {
+      const record = { ...habits.find(h => h.id === id), [field]: cellValue, updated_at: new Date().toISOString() };
+      updateHabits(habits.map(h => h.id === id ? record : h));
+      await syncRecord("habits", record);
+    } else if (table === "habit_logs") {
+      const record = { ...habitLogs.find(hl => hl.id === id), [field]: cellValue };
+      updateHabitLogs(habitLogs.map(hl => hl.id === id ? record : hl));
+      await syncRecord("habit_logs", record);
     }
     setEditingCell(null);
   };
-  const deleteRow = (table, id) => {
+  const deleteRow = async (table, id) => {
     if (table === "projects") updateProjects(projects.filter(p => p.id !== id));
     else if (table === "tasks") updateTasks(tasks.filter(t => t.id !== id));
     else if (table === "journal") updateJournal(journal.filter(j => j.id !== id));
-    deleteRecord(table, id);
+    else if (table === "habits") updateHabits(habits.filter(h => h.id !== id));
+    else if (table === "habit_logs") updateHabitLogs(habitLogs.filter(hl => hl.id !== id));
+    await deleteRecord(table, id);
   };
 
   const todayTasks = tasks.filter(t => t.due === todayStr && t.status !== "Terminé" && t.status !== "Abandonné");
@@ -1580,6 +1590,34 @@ export default function App() {
                 { key: "nextAction", label: "Prochaine action", w: 160 },
               ],
             },
+            habits: {
+              label: "Habitudes",
+              data: habits,
+              cols: [
+                { key: "id", label: "ID", w: 80, readonly: true },
+                { key: "name", label: "Nom", w: 180 },
+                { key: "description", label: "Description", w: 200 },
+                { key: "department_id", label: "Dept", w: 80, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon + " " + d.label })) },
+                { key: "habit_type", label: "Type", w: 90, type: "select", options: [{ value: "acquire", label: "🟢 Acquérir" }, { value: "eliminate", label: "🔴 Éliminer" }] },
+                { key: "icon", label: "Icône", w: 60 },
+                { key: "target_days", label: "Jours cible", w: 90, type: "number" },
+                { key: "allowed_misses", label: "Ratés permis", w: 100, type: "number" },
+                { key: "archived", label: "Archivé", w: 70, type: "select", options: [{ value: false, label: "Non" }, { value: true, label: "Oui" }] },
+              ],
+            },
+            habit_logs: {
+              label: "Logs habitudes",
+              data: habitLogs,
+              cols: [
+                { key: "id", label: "ID", w: 80, readonly: true },
+                { key: "habit_id", label: "Habitude", w: 100, readonly: true },
+                { key: "logged_at", label: "Date/Heure", w: 160, readonly: true },
+                { key: "completed", label: "Fait", w: 60, type: "select", options: [{ value: true, label: "Oui" }, { value: false, label: "Non" }] },
+                { key: "note", label: "Note", w: 200 },
+                { key: "time_spent_minutes", label: "Minutes", w: 80, type: "number" },
+                { key: "temp", label: "Temp", w: 60, type: "number" },
+              ],
+            },
           };
 
           const { data, cols } = tables[dataTab];
@@ -1647,7 +1685,9 @@ export default function App() {
                   <button style={s.btn("primary")} onClick={() => {
                     if (dataTab === "projects") openModal("project", { status: "Potentiel", dept: "ops", estHours: 0, revenue: 0 });
                     else if (dataTab === "tasks") openModal("task", { status: "À faire", priority: "Moyenne", dept: "ops", temp: 2 });
-                    else openModal("journal", { type: "📝 Note", temp: 2, dept: "ops", priority: "Moyenne" });
+                    else if (dataTab === "journal") openModal("journal", { type: "📝 Note", temp: 2, dept: "ops", priority: "Moyenne" });
+                    else if (dataTab === "habits") openModal("habit", { habit_type: "acquire", target_days: 60, allowed_misses: 0, icon: "✅" });
+                    else if (dataTab === "habit_logs") openModal("habitLog", { logged_at: new Date().toISOString(), completed: true });
                   }}>+ Ajouter</button>
                 </div>
               </div>

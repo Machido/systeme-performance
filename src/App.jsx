@@ -291,14 +291,44 @@ export default function App() {
       d.setDate(d.getDate() - i);
       d.setHours(0, 0, 0, 0);
       const dateStr = d.toISOString().split("T")[0];
-      const count = habitLogs.filter(l => {
+      const dayLogs = habitLogs.filter(l => {
         const logDate = new Date(l.logged_at);
         logDate.setHours(0, 0, 0, 0);
-        return l.habit_id === habitId && l.completed && logDate.toISOString().split("T")[0] === dateStr;
-      }).length;
-      last7.push(count);
+        return l.habit_id === habitId && logDate.toISOString().split("T")[0] === dateStr;
+      });
+      const completedCount = dayLogs.filter(l => l.completed).length;
+      const failedCount = dayLogs.filter(l => !l.completed).length;
+      last7.push({ date: dateStr, completed: completedCount, failed: failedCount });
     }
     return last7;
+  };
+
+  // Quick log for a specific date
+  const quickLogHabitForDate = async (habitId, dateStr, completed) => {
+    // Check if log already exists for this date
+    const existingLog = habitLogs.find(l => {
+      const logDate = new Date(l.logged_at).toISOString().split("T")[0];
+      return l.habit_id === habitId && logDate === dateStr && l.completed === completed;
+    });
+    
+    if (existingLog) {
+      // Toggle: remove the log
+      const updated = habitLogs.filter(l => l.id !== existingLog.id);
+      updateHabitLogs(updated);
+      await supabase.from("habit_logs").delete().eq("id", existingLog.id);
+    } else {
+      // Add new log
+      const newLog = {
+        id: `HL${Date.now()}`,
+        habit_id: habitId,
+        logged_at: dateStr + "T12:00:00.000Z", // Noon of that day
+        completed,
+        notes: "",
+      };
+      const updated = [...habitLogs, newLog];
+      updateHabitLogs(updated);
+      await supabase.from("habit_logs").insert([newLog]);
+    }
   };
 
   // ── Export CSV ──
@@ -1031,29 +1061,56 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Last 7 days */}
-                        <div style={{ display: "flex", gap: 4 }}>
+                        {/* Last 7 days - clickable */}
+                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                           <span style={{ fontSize: 11, color: "#aaa", marginRight: 4 }}>7 derniers jours:</span>
-                          {last7.map((count, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: 4,
-                                background: count > 0 ? dept.color : "#f0f0f0",
-                                border: count > 0 ? "none" : "1px solid #ddd",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: count > 0 ? "#fff" : "transparent",
-                              }}
-                              title={count > 0 ? `${count}× ce jour` : "Manqué"}>
-                              {count > 0 ? count : ""}
-                            </div>
-                          ))}
+                          {last7.map((day, idx) => {
+                            const dayName = new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'short' });
+                            const hasCompleted = day.completed > 0;
+                            const hasFailed = day.failed > 0;
+                            const isEmpty = !hasCompleted && !hasFailed;
+                            
+                            return (
+                              <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Cycle: empty → completed → failed → empty
+                                    if (isEmpty) {
+                                      quickLogHabitForDate(habit.id, day.date, true);
+                                    } else if (hasCompleted) {
+                                      quickLogHabitForDate(habit.id, day.date, false);
+                                    } else {
+                                      quickLogHabitForDate(habit.id, day.date, false); // Remove failed
+                                    }
+                                  }}
+                                  style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 6,
+                                    background: hasCompleted ? dept.color : hasFailed ? "#E85555" : "#f0f0f0",
+                                    border: isEmpty ? "1px dashed #ccc" : "none",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: hasCompleted || hasFailed ? "#fff" : "#ccc",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                    opacity: isEmpty ? 0.4 : 1,
+                                  }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                                  title={`${dayName} ${day.date}\nCliquer: ${isEmpty ? 'Compléter' : hasCompleted ? 'Marquer manqué' : 'Effacer'}`}>
+                                  {hasCompleted ? "✓" : hasFailed ? "✗" : ""}
+                                </div>
+                                <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase" }}>
+                                  {dayName}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -1153,28 +1210,57 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div style={{ display: "flex", gap: 4 }}>
+                        {/* Last 7 days - clickable */}
+                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                           <span style={{ fontSize: 11, color: "#aaa", marginRight: 4 }}>7 derniers jours:</span>
-                          {last7.map((count, idx) => (
-                            <div
-                              key={idx}
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: 4,
-                                background: count > 0 ? "#888" : "#f0f0f0",
-                                border: count > 0 ? "none" : "1px solid #ddd",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: count > 0 ? "#fff" : "transparent",
-                              }}
-                              title={count > 0 ? `${count}× ce jour` : "Manqué"}>
-                              {count > 0 ? count : ""}
-                            </div>
-                          ))}
+                          {last7.map((day, idx) => {
+                            const dayName = new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'short' });
+                            const hasCompleted = day.completed > 0;
+                            const hasFailed = day.failed > 0;
+                            const isEmpty = !hasCompleted && !hasFailed;
+                            const habitColor = "#888"; // Default color for ungrouped
+                            
+                            return (
+                              <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Cycle: empty → completed → failed → empty
+                                    if (isEmpty) {
+                                      quickLogHabitForDate(habit.id, day.date, true);
+                                    } else if (hasCompleted) {
+                                      quickLogHabitForDate(habit.id, day.date, false);
+                                    } else {
+                                      quickLogHabitForDate(habit.id, day.date, false); // Remove failed
+                                    }
+                                  }}
+                                  style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 6,
+                                    background: hasCompleted ? habitColor : hasFailed ? "#E85555" : "#f0f0f0",
+                                    border: isEmpty ? "1px dashed #ccc" : "none",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: hasCompleted || hasFailed ? "#fff" : "#ccc",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                    opacity: isEmpty ? 0.4 : 1,
+                                  }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                                  title={`${dayName} ${day.date}\nCliquer: ${isEmpty ? 'Compléter' : hasCompleted ? 'Marquer manqué' : 'Effacer'}`}>
+                                  {hasCompleted ? "✓" : hasFailed ? "✗" : ""}
+                                </div>
+                                <span style={{ fontSize: 9, color: "#aaa", textTransform: "uppercase" }}>
+                                  {dayName}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );

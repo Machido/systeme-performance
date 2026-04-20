@@ -1385,6 +1385,18 @@ export default function App() {
                     // Get all unique habit names
                     const habitNames = [...new Set(habits.map(h => h.name))];
                     
+                    // State for visible habits (all visible by default)
+                    const [visibleHabits, setVisibleHabits] = useState(() => {
+                      const initial = {};
+                      habitNames.forEach(name => { initial[name] = true; });
+                      return initial;
+                    });
+                    
+                    // Toggle habit visibility
+                    const toggleHabit = (name) => {
+                      setVisibleHabits(prev => ({ ...prev, [name]: !prev[name] }));
+                    };
+                    
                     // Process all logs
                     habitLogs.forEach(log => {
                       const date = log.logged_at.split('T')[0]; // YYYY-MM-DD
@@ -1401,7 +1413,7 @@ export default function App() {
                       }
                     });
 
-                    // Fill in missing dates with zeros (optional: last 30 days)
+                    // Fill in missing dates with zeros
                     const dates = Object.keys(dateMap).sort();
                     if (dates.length > 0) {
                       const startDate = new Date(dates[0]);
@@ -1421,13 +1433,48 @@ export default function App() {
                     const habitTrackingData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
                     if (!habitTrackingData.length) return null;
 
-                    const toggleStyle3 = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
-
                     return (
                       <div style={{ ...chartCard, marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                           <div style={chartTitle}>🎯 Suivi des habitudes — Logs par jour</div>
                         </div>
+                        
+                        {/* Habit filter checkboxes */}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #f0f0f0" }}>
+                          {habitNames.map((name, i) => {
+                            const color = habitColors[i % habitColors.length];
+                            const isVisible = visibleHabits[name];
+                            return (
+                              <label 
+                                key={name} 
+                                style={{ 
+                                  display: "flex", 
+                                  alignItems: "center", 
+                                  gap: 6, 
+                                  padding: "6px 10px",
+                                  borderRadius: 6,
+                                  border: `1px solid ${isVisible ? color : "#e0e0e0"}`,
+                                  background: isVisible ? color + "15" : "#fff",
+                                  cursor: "pointer",
+                                  fontSize: 11,
+                                  fontWeight: isVisible ? 600 : 400,
+                                  color: isVisible ? "#333" : "#999",
+                                  transition: "all 0.2s ease"
+                                }}
+                              >
+                                <input 
+                                  type="checkbox" 
+                                  checked={isVisible} 
+                                  onChange={() => toggleHabit(name)}
+                                  style={{ cursor: "pointer" }}
+                                />
+                                <div style={{ width: 12, height: 12, borderRadius: 2, background: color, opacity: isVisible ? 1 : 0.3 }} />
+                                <span>{name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        
                         <ResponsiveContainer width="100%" height={240}>
                           <LineChart data={habitTrackingData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -1435,17 +1482,20 @@ export default function App() {
                             <YAxis allowDecimals={false} domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
                             <Tooltip formatter={(val, name) => [`${val > 0 ? '+' : ''}${val}`, name]} />
                             <Legend wrapperStyle={{ fontSize: 11 }} />
-                            {habitNames.map((name, i) => (
-                              <Line 
-                                key={name} 
-                                type="monotone" 
-                                dataKey={name} 
-                                stroke={habitColors[i % habitColors.length]} 
-                                strokeWidth={2} 
-                                dot={{ r: 3 }} 
-                                activeDot={{ r: 5 }}
-                              />
-                            ))}
+                            {habitNames.filter(name => visibleHabits[name]).map((name, i) => {
+                              const originalIndex = habitNames.indexOf(name);
+                              return (
+                                <Line 
+                                  key={name} 
+                                  type="monotone" 
+                                  dataKey={name} 
+                                  stroke={habitColors[originalIndex % habitColors.length]} 
+                                  strokeWidth={2} 
+                                  dot={{ r: 3 }} 
+                                  activeDot={{ r: 5 }}
+                                />
+                              );
+                            })}
                           </LineChart>
                         </ResponsiveContainer>
                       </div>

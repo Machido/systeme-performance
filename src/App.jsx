@@ -67,6 +67,37 @@ const endOfWeekStr = endOfWeek.toISOString().split("T")[0];
 
 const isOverdue = (due) => due && new Date(due) < today;
 
+// ── TIMEZONE HELPERS ──
+// Get local date string (YYYY-MM-DD) in user's timezone
+const getLocalDateStr = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Get local datetime string (ISO format but in local timezone)
+const getLocalDateTimeStr = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+};
+
+// Parse date string and treat as local (not UTC)
+const parseLocalDate = (dateStr) => {
+  if (!dateStr) return null;
+  // If it's just YYYY-MM-DD, treat as local midnight
+  if (dateStr.length === 10) {
+    return new Date(dateStr + "T00:00:00");
+  }
+  // If it has time, parse as-is (browser will treat as local)
+  return new Date(dateStr);
+};
+
 // Priority columns for Kanban
 const PRIORITY_COLS = [
   { id: "Basse", label: "Basse", icon: "📦" },
@@ -211,9 +242,9 @@ export default function App() {
       id: logId,
       habit_id: habitId,
       user_id: "default",
-      logged_at: new Date().toISOString(),
+      logged_at: getLocalDateTimeStr(),
       completed,
-      created_at: new Date().toISOString(),
+      created_at: getLocalDateTimeStr(),
     };
     const updated = [...habitLogs, record];
     updateHabitLogs(updated);
@@ -224,7 +255,7 @@ export default function App() {
     if (!form.name) return;
     let updated, record;
     if (form.id) {
-      record = { ...habits.find(h => h.id === form.id), ...form, updated_at: new Date().toISOString() };
+      record = { ...habits.find(h => h.id === form.id), ...form, updated_at: getLocalDateTimeStr() };
       updated = habits.map(h => h.id === form.id ? record : h);
     } else {
       const id = "H" + Date.now();
@@ -237,8 +268,8 @@ export default function App() {
         target_days: form.target_days || 60,
         allowed_misses: form.allowed_misses || 0,
         archived: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: getLocalDateTimeStr(),
+        updated_at: getLocalDateTimeStr(),
       };
       updated = [...habits, record];
     }
@@ -259,7 +290,7 @@ export default function App() {
       note: form.note || null,
       time_spent_minutes: form.time_spent_minutes || null,
       temp: form.temp || null,
-      created_at: new Date().toISOString(),
+      created_at: getLocalDateTimeStr(),
     };
     const updated = [...habitLogs, record];
     updateHabitLogs(updated);
@@ -322,7 +353,7 @@ export default function App() {
       const newLog = {
         id: `HL${Date.now()}`,
         habit_id: habitId,
-        logged_at: dateStr + "T12:00:00.000Z", // Noon of that day
+        logged_at: dateStr + "T12:00:00", // Noon of that day (local time)
         completed,
         notes: "",
       };
@@ -543,7 +574,7 @@ export default function App() {
       updateJournal(journal.map(j => j.id === id ? record : j));
       await syncRecord("journal", record);
     } else if (table === "habits") {
-      const record = { ...habits.find(h => h.id === id), [field]: cellValue, updated_at: new Date().toISOString() };
+      const record = { ...habits.find(h => h.id === id), [field]: cellValue, updated_at: getLocalDateTimeStr() };
       updateHabits(habits.map(h => h.id === id ? record : h));
       await syncRecord("habits", record);
     } else if (table === "habit_logs") {
@@ -1028,7 +1059,7 @@ export default function App() {
                               onClick={() => {
                                 setForm({ 
                                   _habit: habit,
-                                  logged_at: new Date().toISOString(), 
+                                  logged_at: getLocalDateTimeStr(), 
                                   completed: true 
                                 });
                                 setShowModal("habitLog");
@@ -1178,7 +1209,7 @@ export default function App() {
                               onClick={() => {
                                 setForm({ 
                                   _habit: habit,
-                                  logged_at: new Date().toISOString(), 
+                                  logged_at: getLocalDateTimeStr(), 
                                   completed: true 
                                 });
                                 setShowModal("habitLog");
@@ -1916,7 +1947,7 @@ export default function App() {
                     else if (dataTab === "tasks") openModal("task", { status: "À faire", priority: "Moyenne", dept: "ops", temp: 2 });
                     else if (dataTab === "journal") openModal("journal", { type: "📝 Note", temp: 2, dept: "ops", priority: "Moyenne" });
                     else if (dataTab === "habits") openModal("habit", { habit_type: "acquire", target_days: 60, allowed_misses: 0, icon: "✅" });
-                    else if (dataTab === "habit_logs") openModal("habitLog", { logged_at: new Date().toISOString(), completed: true });
+                    else if (dataTab === "habit_logs") openModal("habitLog", { logged_at: getLocalDateTimeStr(), completed: true });
                   }}>+ Ajouter</button>
                 </div>
               </div>

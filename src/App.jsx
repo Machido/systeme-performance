@@ -1375,31 +1375,51 @@ export default function App() {
 
                   {/* Habit tracking — logs per habit over time */}
                   {(() => {
-                    if (!habits.length || !habitLogs.length) return null;
+                    if (!habits.length) return null;
                     
-                    // Build time series: each date has a count per habit
+                    // Build time series: each date has a score per habit
+                    // +1 for completed, -1 for failed (completed=false), 0 for missing days
                     const dateMap = {};
                     const habitColors = ["#4A90D9", "#E8A838", "#6BBF6B", "#B07FE8", "#E85555", "#5b4ef8", "#FF6B9D", "#4ECDC4"];
                     
+                    // Get all unique habit names
+                    const habitNames = [...new Set(habits.map(h => h.name))];
+                    
+                    // Process all logs
                     habitLogs.forEach(log => {
-                      if (!log.completed) return; // Only count successful logs
                       const date = log.logged_at.split('T')[0]; // YYYY-MM-DD
-                      if (!dateMap[date]) dateMap[date] = { date };
+                      if (!dateMap[date]) {
+                        dateMap[date] = { date };
+                        // Initialize all habits to 0 for this date
+                        habitNames.forEach(name => { dateMap[date][name] = 0; });
+                      }
                       const habit = habits.find(h => h.id === log.habit_id);
                       if (habit) {
                         const key = habit.name;
-                        dateMap[date][key] = (dateMap[date][key] || 0) + 1;
+                        // +1 for completed, -1 for failed
+                        dateMap[date][key] += log.completed ? 1 : -1;
                       }
                     });
 
+                    // Fill in missing dates with zeros (optional: last 30 days)
+                    const dates = Object.keys(dateMap).sort();
+                    if (dates.length > 0) {
+                      const startDate = new Date(dates[0]);
+                      const endDate = new Date(dates[dates.length - 1]);
+                      const currentDate = new Date(startDate);
+                      
+                      while (currentDate <= endDate) {
+                        const dateStr = currentDate.toISOString().split('T')[0];
+                        if (!dateMap[dateStr]) {
+                          dateMap[dateStr] = { date: dateStr };
+                          habitNames.forEach(name => { dateMap[dateStr][name] = 0; });
+                        }
+                        currentDate.setDate(currentDate.getDate() + 1);
+                      }
+                    }
+
                     const habitTrackingData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
                     if (!habitTrackingData.length) return null;
-
-                    // Get unique habit names for lines
-                    const habitNames = [...new Set(habitLogs.map(log => {
-                      const habit = habits.find(h => h.id === log.habit_id);
-                      return habit?.name;
-                    }).filter(Boolean))];
 
                     const toggleStyle3 = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
 
@@ -1412,8 +1432,8 @@ export default function App() {
                           <LineChart data={habitTrackingData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} tickFormatter={d => d.slice(5)} />
-                            <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
-                            <Tooltip />
+                            <YAxis allowDecimals={false} domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                            <Tooltip formatter={(val, name) => [`${val > 0 ? '+' : ''}${val}`, name]} />
                             <Legend wrapperStyle={{ fontSize: 11 }} />
                             {habitNames.map((name, i) => (
                               <Line 

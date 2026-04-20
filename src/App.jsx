@@ -159,6 +159,7 @@ export default function App() {
   const [habitDeptFilter, setHabitDeptFilter] = useState("all");
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [quickLogHabit, setQuickLogHabit] = useState(null);
+  const [visibleHabits, setVisibleHabits] = useState({});
 
   // ── LOAD from Supabase on mount ──
   useEffect(() => {
@@ -1471,12 +1472,12 @@ export default function App() {
                     // Get all unique habit names
                     const habitNames = [...new Set(habits.map(h => h.name))];
                     
-                    // State for visible habits (all visible by default)
-                    const [visibleHabits, setVisibleHabits] = useState(() => {
+                    // Initialize visibleHabits if needed (on first render of this section)
+                    if (habitNames.length > 0 && Object.keys(visibleHabits).length === 0) {
                       const initial = {};
                       habitNames.forEach(name => { initial[name] = true; });
-                      return initial;
-                    });
+                      setVisibleHabits(initial);
+                    }
                     
                     // Toggle habit visibility
                     const toggleHabit = (name) => {

@@ -100,9 +100,9 @@ const parseLocalDate = (dateStr) => {
 
 // Priority columns for Kanban
 const PRIORITY_COLS = [
-  { id: "Basse", label: "Basse", icon: "📦" },
-  { id: "Moyenne", label: "Moyenne", icon: "📋" },
-  { id: "Haute", label: "Haute", icon: "🔥" },
+  { id: "Basse", label: "Basse", icon: "📦", color: "#FF9800" }, // Orange
+  { id: "Moyenne", label: "Moyenne", icon: "📋", color: "#4CAF50" }, // Vert
+  { id: "Haute", label: "Haute", icon: "🔥", color: "#F44336" }, // Rouge
 ];
 
 const getDueDateFilter = (due) => {
@@ -760,7 +760,7 @@ export default function App() {
                 {PRIORITY_COLS.map(col => {
                   const colTasks = kanbanTasks.filter(t => t.priority === col.id);
                   return (
-                    <div key={col.id} style={s.kanbanCol}
+                    <div key={col.id} style={{ ...s.kanbanCol, background: col.color + "20" }} // 20 = 12% opacity
                       onDragOver={e => e.preventDefault()}
                       onDrop={() => onKanbanDrop(col.id)}>
                       <div style={s.kanbanColHeader}>

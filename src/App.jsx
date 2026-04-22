@@ -887,20 +887,19 @@ export default function App() {
         {tab === "projects" && (
           <div>
             <div style={{ ...s.sectionTitle, marginBottom: 16 }}>
-              <span>PROJETS</span>
-              <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>+ Nouveau projet</button>
-            </div>
-            <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
-              <div>
-                <label style={s.label}>Recherche</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span>PROJETS</span>
                 <input
                   type="text"
-                  style={{ ...s.input, marginBottom: 0, minWidth: 200 }}
-                  placeholder="Rechercher un projet..."
+                  style={{ ...s.input, marginBottom: 0, minWidth: 250, fontSize: 13 }}
+                  placeholder="🔍 Rechercher un projet..."
                   value={projectSearch}
                   onChange={e => setProjectSearch(e.target.value)}
                 />
               </div>
+              <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>+ Nouveau projet</button>
+            </div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
               <div>
                 <label style={s.label}>Statut</label>
                 <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectStatusFilter} onChange={e => setProjectStatusFilter(e.target.value)}>

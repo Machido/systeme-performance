@@ -176,6 +176,7 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
+  const [projectFocusOnly, setProjectFocusOnly] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
@@ -879,7 +880,7 @@ export default function App() {
               <span>PROJETS</span>
               <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>+ Nouveau projet</button>
             </div>
-            <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-end" }}>
               <div>
                 <label style={s.label}>Statut</label>
                 <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectStatusFilter} onChange={e => setProjectStatusFilter(e.target.value)}>
@@ -894,13 +895,19 @@ export default function App() {
                   {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
                 </select>
               </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                <input type="checkbox" checked={projectFocusOnly} onChange={e => setProjectFocusOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                ⭐ Focus uniquement
+              </label>
             </div>
             {PROJECT_STATUSES.map(ps => {
               // Apply status filter
               if (projectStatusFilter !== "all" && ps !== projectStatusFilter) return null;
               
-              // Apply department filter
-              const grouped = (projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter)).filter(p => p.status === ps);
+              // Apply department and focus filters
+              let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
+              if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
+              const grouped = filtered.filter(p => p.status === ps);
               if (grouped.length === 0) return null;
               return (
                 <div key={ps} style={s.section}>
@@ -917,9 +924,32 @@ export default function App() {
                       <div key={p.id} style={{ ...s.card, borderLeft: `3px solid ${deptColor}`, cursor: "pointer" }}
                         onClick={() => openModal("project", { ...p })}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                          <div style={{ flex: 1 }}>
-                            <span style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>{p.name}</span>
-                            <span style={{ ...s.tag(deptColor), marginLeft: 8 }}>{getDeptIcon(p.dept)} {DEPTS.find(d => d.id === p.dept)?.label}</span>
+                          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const updated = { ...p, focus: !p.focus };
+                                const newProjects = projects.map(pr => pr.id === p.id ? updated : pr);
+                                updateProjects(newProjects);
+                                await syncRecord("projects", updated);
+                              }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: 18,
+                                padding: 0,
+                                opacity: p.focus ? 1 : 0.3,
+                                transition: "opacity 0.2s"
+                              }}
+                              title={p.focus ? "Retirer du focus" : "Mettre en focus"}
+                            >
+                              ⭐
+                            </button>
+                            <div>
+                              <span style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>{p.name}</span>
+                              <span style={{ ...s.tag(deptColor), marginLeft: 8 }}>{getDeptIcon(p.dept)} {DEPTS.find(d => d.id === p.dept)?.label}</span>
+                            </div>
                           </div>
                           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                             {p.revenue > 0 && <span style={{ fontSize: 12, color: "#6BBF6B", fontWeight: 600 }}>€{p.revenue.toLocaleString()}</span>}
@@ -1828,6 +1858,7 @@ export default function App() {
                 { key: "name", label: "Nom", w: 180 },
                 { key: "dept", label: "Dept", w: 80, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon + " " + d.label })) },
                 { key: "status", label: "Statut", w: 110, type: "select", options: PROJECT_STATUSES.map(s => ({ value: s, label: s })) },
+                { key: "focus", label: "Focus", w: 70, type: "select", options: [{ value: false, label: "Non" }, { value: true, label: "⭐ Oui" }] },
                 { key: "created_at", label: "Créé le", w: 140, readonly: true },
                 { key: "startDate", label: "Début", w: 100, type: "date" },
                 { key: "endDate", label: "Fin", w: 100, type: "date" },

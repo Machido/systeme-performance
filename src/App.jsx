@@ -683,6 +683,10 @@ export default function App() {
           let kanbanTasks = tasks;
           if (deptFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.dept === deptFilter);
           if (projectFilter === "none") kanbanTasks = kanbanTasks.filter(t => !t.project);
+          else if (projectFilter === "focus") {
+            const focusProjectIds = projects.filter(p => p.focus).map(p => p.id);
+            kanbanTasks = kanbanTasks.filter(t => focusProjectIds.includes(t.project));
+          }
           else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
           if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
@@ -733,6 +737,7 @@ export default function App() {
                   <label style={s.label}>Projet</label>
                   <select style={{ ...s.select, marginBottom: 0, minWidth: 170 }} value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>
                     <option value="all">Tous les projets</option>
+                    <option value="focus">⭐ Projets focus</option>
                     <option value="none">Aucun projet</option>
                     {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
                   </select>

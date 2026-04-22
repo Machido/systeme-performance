@@ -178,6 +178,7 @@ export default function App() {
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [projectFocusOnly, setProjectFocusOnly] = useState(false);
+  const [projectSearch, setProjectSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
@@ -889,7 +890,17 @@ export default function App() {
               <span>PROJETS</span>
               <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>+ Nouveau projet</button>
             </div>
-            <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-end" }}>
+            <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+              <div>
+                <label style={s.label}>Recherche</label>
+                <input
+                  type="text"
+                  style={{ ...s.input, marginBottom: 0, minWidth: 200 }}
+                  placeholder="Rechercher un projet..."
+                  value={projectSearch}
+                  onChange={e => setProjectSearch(e.target.value)}
+                />
+              </div>
               <div>
                 <label style={s.label}>Statut</label>
                 <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectStatusFilter} onChange={e => setProjectStatusFilter(e.target.value)}>
@@ -913,9 +924,17 @@ export default function App() {
               // Apply status filter
               if (projectStatusFilter !== "all" && ps !== projectStatusFilter) return null;
               
-              // Apply department and focus filters
+              // Apply department, focus, and search filters
               let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
               if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
+              if (projectSearch.trim()) {
+                const q = projectSearch.toLowerCase();
+                filtered = filtered.filter(p =>
+                  p.name.toLowerCase().includes(q) ||
+                  (p.description || "").toLowerCase().includes(q) ||
+                  (p.notes || "").toLowerCase().includes(q)
+                );
+              }
               const grouped = filtered.filter(p => p.status === ps);
               if (grouped.length === 0) return null;
               return (

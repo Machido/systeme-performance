@@ -2195,6 +2195,16 @@ export default function App() {
                   </div>
                 </div>
 
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#444", cursor: "pointer", userSelect: "none", marginTop: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.focus || false}
+                    onChange={e => setForm({ ...form, focus: e.target.checked })}
+                    style={{ accentColor: "#5b4ef8", width: 18, height: 18, cursor: "pointer" }}
+                  />
+                  🔥 Projet en focus
+                </label>
+
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Date de début</label>

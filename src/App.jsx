@@ -174,6 +174,8 @@ export default function App() {
   const [kanbanShowBotOnly, setKanbanShowBotOnly] = useState(false);
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [projectStatusFilter, setProjectStatusFilter] = useState("all");
+  const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
@@ -877,8 +879,28 @@ export default function App() {
               <span>PROJETS</span>
               <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>+ Nouveau projet</button>
             </div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+              <div>
+                <label style={s.label}>Statut</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectStatusFilter} onChange={e => setProjectStatusFilter(e.target.value)}>
+                  <option value="all">Tous les statuts</option>
+                  {PROJECT_STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Département</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectDeptFilter} onChange={e => setProjectDeptFilter(e.target.value)}>
+                  <option value="all">Tous les départements</option>
+                  {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                </select>
+              </div>
+            </div>
             {PROJECT_STATUSES.map(ps => {
-              const grouped = (deptFilter === "all" ? projects : projects.filter(p => p.dept === deptFilter)).filter(p => p.status === ps);
+              // Apply status filter
+              if (projectStatusFilter !== "all" && ps !== projectStatusFilter) return null;
+              
+              // Apply department filter
+              const grouped = (projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter)).filter(p => p.status === ps);
               if (grouped.length === 0) return null;
               return (
                 <div key={ps} style={s.section}>

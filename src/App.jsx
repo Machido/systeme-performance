@@ -737,7 +737,7 @@ export default function App() {
                   <label style={s.label}>Projet</label>
                   <select style={{ ...s.select, marginBottom: 0, minWidth: 170 }} value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>
                     <option value="all">Tous les projets</option>
-                    <option value="focus">⭐ Projets focus</option>
+                    <option value="focus">🔥 Projets focus</option>
                     <option value="none">Aucun projet</option>
                     {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
                   </select>
@@ -902,7 +902,7 @@ export default function App() {
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                 <input type="checkbox" checked={projectFocusOnly} onChange={e => setProjectFocusOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
-                ⭐ Focus uniquement
+                🔥 Focus uniquement
               </label>
             </div>
             {PROJECT_STATUSES.map(ps => {
@@ -949,7 +949,7 @@ export default function App() {
                               }}
                               title={p.focus ? "Retirer du focus" : "Mettre en focus"}
                             >
-                              ⭐
+                              🔥
                             </button>
                             <div>
                               <span style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>{p.name}</span>
@@ -1863,7 +1863,7 @@ export default function App() {
                 { key: "name", label: "Nom", w: 180 },
                 { key: "dept", label: "Dept", w: 80, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon + " " + d.label })) },
                 { key: "status", label: "Statut", w: 110, type: "select", options: PROJECT_STATUSES.map(s => ({ value: s, label: s })) },
-                { key: "focus", label: "Focus", w: 70, type: "select", options: [{ value: false, label: "Non" }, { value: true, label: "⭐ Oui" }] },
+                { key: "focus", label: "Focus", w: 70, type: "select", options: [{ value: false, label: "Non" }, { value: true, label: "🔥 Oui" }] },
                 { key: "created_at", label: "Créé le", w: 140, readonly: true },
                 { key: "startDate", label: "Début", w: 100, type: "date" },
                 { key: "endDate", label: "Fin", w: 100, type: "date" },

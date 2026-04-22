@@ -171,6 +171,7 @@ export default function App() {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [cellValue, setCellValue] = useState("");
   const [kanbanShowDone, setKanbanShowDone] = useState(false);
+  const [kanbanShowBotOnly, setKanbanShowBotOnly] = useState(false);
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
@@ -682,6 +683,7 @@ export default function App() {
           else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
           if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
+          if (kanbanShowBotOnly) kanbanTasks = kanbanTasks.filter(t => t.createdBy === 'bot');
           if (kanbanSearch.trim()) {
             const q = kanbanSearch.toLowerCase();
             kanbanTasks = kanbanTasks.filter(t => t.name.toLowerCase().includes(q) || (t.notes || "").toLowerCase().includes(q));
@@ -750,6 +752,10 @@ export default function App() {
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={kanbanShowDone} onChange={e => setKanbanShowDone(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
                     Tâches terminées
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                    <input type="checkbox" checked={kanbanShowBotOnly} onChange={e => setKanbanShowBotOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                    🤖 Créées par bot
                   </label>
                   <button style={s.btn("primary")} onClick={() => openModal("task", { status: "À faire", priority: "Moyenne", dept: deptFilter === "all" ? "ops" : deptFilter, temp: 2 })}>+ Nouvelle tâche</button>
                 </div>
@@ -1822,6 +1828,7 @@ export default function App() {
                 { key: "estH", label: "H. est.", w: 70, type: "number" },
                 { key: "passedH", label: "H. réel", w: 70, type: "number" },
                 { key: "temp", label: "Temp", w: 60, type: "number" },
+                { key: "createdBy", label: "Créé par", w: 90, type: "select", options: [{ value: "user", label: "👤 User" }, { value: "bot", label: "🤖 Bot" }] },
                 { key: "notes", label: "Notes", w: 160 },
               ],
             },

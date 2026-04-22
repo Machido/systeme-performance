@@ -436,6 +436,18 @@ export default function App() {
 
   const saveTask = () => {
     if (!form.name) return;
+    
+    // Auto-correct: if project is a name instead of ID, find the matching project
+    if (form.project && !form.project.startsWith('P')) {
+      const matchedProject = projects.find(p => p.name === form.project);
+      if (matchedProject) {
+        form.project = matchedProject.id; // Auto-convert name to ID
+      } else {
+        alert(`Projet introuvable: "${form.project}". Veuillez sélectionner un projet valide.`);
+        return;
+      }
+    }
+    
     let updated, record;
     const prevStatus = form.id ? tasks.find(t => t.id === form.id)?.status : null;
     const wasCompleted = form.id && prevStatus !== "Terminé" && form.status === "Terminé";

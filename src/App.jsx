@@ -2174,6 +2174,16 @@ export default function App() {
 
             {showModal === "project" && (
               <>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#444", cursor: "pointer", userSelect: "none", marginBottom: 16, padding: "8px 0" }}>
+                  <input
+                    type="checkbox"
+                    checked={form.focus || false}
+                    onChange={e => setForm({ ...form, focus: e.target.checked })}
+                    style={{ accentColor: "#5b4ef8", width: 18, height: 18, cursor: "pointer" }}
+                  />
+                  🔥 Projet en focus
+                </label>
+
                 <label style={s.label}>Nom du projet</label>
                 <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nom court et descriptif…" />
 
@@ -2194,16 +2204,6 @@ export default function App() {
                     </select>
                   </div>
                 </div>
-
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#444", cursor: "pointer", userSelect: "none", marginTop: 8 }}>
-                  <input
-                    type="checkbox"
-                    checked={form.focus || false}
-                    onChange={e => setForm({ ...form, focus: e.target.checked })}
-                    style={{ accentColor: "#5b4ef8", width: 18, height: 18, cursor: "pointer" }}
-                  />
-                  🔥 Projet en focus
-                </label>
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

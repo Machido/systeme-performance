@@ -172,6 +172,7 @@ export default function App() {
   const [cellValue, setCellValue] = useState("");
   const [kanbanShowDone, setKanbanShowDone] = useState(false);
   const [kanbanShowBotOnly, setKanbanShowBotOnly] = useState(false);
+  const [kanbanFocusOnly, setKanbanFocusOnly] = useState(false);
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
@@ -683,11 +684,11 @@ export default function App() {
           let kanbanTasks = tasks;
           if (deptFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.dept === deptFilter);
           if (projectFilter === "none") kanbanTasks = kanbanTasks.filter(t => !t.project);
-          else if (projectFilter === "focus") {
+          else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
+          if (kanbanFocusOnly) {
             const focusProjectIds = projects.filter(p => p.focus).map(p => p.id);
             kanbanTasks = kanbanTasks.filter(t => focusProjectIds.includes(t.project));
           }
-          else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
           if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
           if (kanbanShowBotOnly) kanbanTasks = kanbanTasks.filter(t => t.createdBy === 'bot');
@@ -737,7 +738,6 @@ export default function App() {
                   <label style={s.label}>Projet</label>
                   <select style={{ ...s.select, marginBottom: 0, minWidth: 170 }} value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>
                     <option value="all">Tous les projets</option>
-                    <option value="focus">🔥 Projets focus</option>
                     <option value="none">Aucun projet</option>
                     {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
                   </select>
@@ -764,6 +764,10 @@ export default function App() {
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={kanbanShowBotOnly} onChange={e => setKanbanShowBotOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
                     🤖 Créées par bot
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                    <input type="checkbox" checked={kanbanFocusOnly} onChange={e => setKanbanFocusOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                    🔥 Focus uniquement
                   </label>
                   <button style={s.btn("primary")} onClick={() => openModal("task", { status: "À faire", priority: "Moyenne", dept: deptFilter === "all" ? "ops" : deptFilter, temp: 2 })}>+ Nouvelle tâche</button>
                 </div>

@@ -1800,6 +1800,7 @@ export default function App() {
                 { key: "name", label: "Nom", w: 180 },
                 { key: "dept", label: "Dept", w: 80, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon + " " + d.label })) },
                 { key: "status", label: "Statut", w: 110, type: "select", options: PROJECT_STATUSES.map(s => ({ value: s, label: s })) },
+                { key: "created_at", label: "Créé le", w: 140, readonly: true },
                 { key: "startDate", label: "Début", w: 100, type: "date" },
                 { key: "endDate", label: "Fin", w: 100, type: "date" },
                 { key: "estHours", label: "H. est.", w: 70, type: "number" },

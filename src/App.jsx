@@ -167,6 +167,9 @@ export default function App() {
   const [veloProject, setVeloProject] = useState("all");
   const [veloPeriod, setVeloPeriod] = useState("daily");
   const [satPeriod, setSatPeriod] = useState("daily");
+  const [habitPeriod, setHabitPeriod] = useState("daily");
+  const [timePeriod, setTimePeriod] = useState("daily");
+  const [deptTaskPeriod, setDeptTaskPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [cellValue, setCellValue] = useState("");
@@ -1408,6 +1411,10 @@ export default function App() {
 
         {/* ── DASHBOARD ── */}
         {tab === "dashboard" && (() => {
+          // Shared style helpers
+          const toggleStyle = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
+          const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
+          
           const fp = deptFilter === "all" ? projects : projects.filter(p => p.dept === deptFilter);
           const ft = filteredTasks.filter(t => t.status !== "Abandonné");
           const done = ft.filter(t => t.status === "Terminé").length;
@@ -1416,9 +1423,28 @@ export default function App() {
           const overdue = ft.filter(t => isOverdue(t.due) && t.status !== "Terminé").length;
           const completion = ft.length ? Math.round((done / ft.length) * 100) : 0;
 
+          // Helper: filter tasks by period based on creation date
+          const filterByPeriod = (tasks, period) => {
+            if (period === "daily") {
+              return tasks.filter(t => t.createdDate && t.createdDate === todayStr);
+            } else if (period === "weekly") {
+              const weekAgo = new Date();
+              weekAgo.setDate(weekAgo.getDate() - 7);
+              const weekAgoStr = weekAgo.toISOString().split('T')[0];
+              return tasks.filter(t => t.createdDate && t.createdDate >= weekAgoStr);
+            } else if (period === "monthly") {
+              const monthAgo = new Date();
+              monthAgo.setMonth(monthAgo.getMonth() - 1);
+              const monthAgoStr = monthAgo.toISOString().split('T')[0];
+              return tasks.filter(t => t.createdDate && t.createdDate >= monthAgoStr);
+            }
+            return tasks;
+          };
+
           // Bar chart: tasks by dept
+          const tasksForDeptChart = filterByPeriod(filteredTasks, deptTaskPeriod);
           const tasksByDept = DEPTS.map(d => {
-            const dt = filteredTasks.filter(t => t.dept === d.id && t.status !== "Abandonné");
+            const dt = tasksForDeptChart.filter(t => t.dept === d.id && t.status !== "Abandonné");
             return {
               name: d.icon,
               label: d.label,
@@ -1430,8 +1456,9 @@ export default function App() {
           });
 
           // Hours bar chart
+          const tasksForTimeChart = filterByPeriod(filteredTasks, timePeriod);
           const hoursByDept = DEPTS.map(d => {
-            const dt = filteredTasks.filter(t => t.dept === d.id && t.status !== "Abandonné");
+            const dt = tasksForTimeChart.filter(t => t.dept === d.id && t.status !== "Abandonné");
             return {
               name: d.icon,
               label: d.label,
@@ -1648,10 +1675,20 @@ export default function App() {
                     const habitTrackingData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
                     if (!habitTrackingData.length) return null;
 
+                    // Aggregate habit data by period
+                    const habitDataAggregated = habitTrackingData.length > 0 
+                      ? aggregateByPeriod(habitTrackingData, habitPeriod, habitNames, "sum")
+                      : [];
+
                     return (
                       <div style={{ ...chartCard, marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                          <div style={chartTitle}>🎯 Suivi des habitudes — Logs par jour</div>
+                          <div style={chartTitle}>🎯 Suivi des habitudes</div>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                              <button key={k} style={toggleStyle(habitPeriod === k)} onClick={() => setHabitPeriod(k)}>{l}</button>
+                            ))}
+                          </div>
                         </div>
                         
                         {/* Habit filter checkboxes */}
@@ -1691,7 +1728,7 @@ export default function App() {
                         </div>
                         
                         <ResponsiveContainer width="100%" height={240}>
-                          <LineChart data={habitTrackingData}>
+                          <LineChart data={habitDataAggregated}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} tickFormatter={d => d.slice(5)} />
                             <YAxis allowDecimals={false} domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
@@ -1783,7 +1820,14 @@ export default function App() {
 
               {/* Row 2: Tasks by dept grouped bar */}
               <div style={{ ...chartCard, marginTop: 16 }}>
-                <div style={chartTitle}>Tâches par département</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <div style={chartTitle}>Tâches par département</div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                      <button key={k} style={toggleStyle(deptTaskPeriod === k)} onClick={() => setDeptTaskPeriod(k)}>{l}</button>
+                    ))}
+                  </div>
+                </div>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={tasksByDept} barGap={4} barCategoryGap="30%">
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -1800,7 +1844,14 @@ export default function App() {
 
               {/* Row 3: Hours estimated vs actual */}
               <div style={{ ...chartCard, marginTop: 0 }}>
-                <div style={chartTitle}>Heures estimées vs passées par département</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <div style={chartTitle}>Heures estimées vs passées par département</div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                      <button key={k} style={toggleStyle(timePeriod === k)} onClick={() => setTimePeriod(k)}>{l}</button>
+                    ))}
+                  </div>
+                </div>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={hoursByDept} barGap={6} barCategoryGap="35%">
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />

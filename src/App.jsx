@@ -182,6 +182,8 @@ export default function App() {
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [projectFocusOnly, setProjectFocusOnly] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
+  const [expandedProjects, setExpandedProjects] = useState(new Set());
+  const [quickTaskForm, setQuickTaskForm] = useState({});
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [kanbanOrder, setKanbanOrder] = useState([]);
   const [dragOverId, setDragOverId] = useState(null);
@@ -959,12 +961,24 @@ export default function App() {
                   </div>
                   {grouped.map(p => {
                     const projTasks = tasks.filter(t => t.project === p.id);
+                    const incompleteTasks = projTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
                     const doneTasks = projTasks.filter(t => t.status === "Terminé").length;
                     const pct = projTasks.length ? Math.round((doneTasks / projTasks.length) * 100) : 0;
                     const deptColor = getDeptColor(p.dept);
+                    const isExpanded = expandedProjects.has(p.id);
+                    
+                    const toggleExpand = (e) => {
+                      e.stopPropagation();
+                      setExpandedProjects(prev => {
+                        const next = new Set(prev);
+                        if (next.has(p.id)) next.delete(p.id);
+                        else next.add(p.id);
+                        return next;
+                      });
+                    };
+                    
                     return (
-                      <div key={p.id} style={{ ...s.card, borderLeft: `3px solid ${deptColor}`, cursor: "pointer" }}
-                        onClick={() => openModal("project", { ...p })}>
+                      <div key={p.id} style={{ ...s.card, borderLeft: `3px solid ${deptColor}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
                           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
                             <button
@@ -995,6 +1009,36 @@ export default function App() {
                           </div>
                           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                             {p.revenue > 0 && <span style={{ fontSize: 12, color: "#6BBF6B", fontWeight: 600 }}>€{p.revenue.toLocaleString()}</span>}
+                            <button
+                              onClick={toggleExpand}
+                              style={{
+                                background: "none",
+                                border: "1px solid #e0e0e0",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                                fontSize: 12,
+                                padding: "4px 8px",
+                                color: "#666"
+                              }}
+                              title={isExpanded ? "Masquer les tâches" : "Afficher les tâches"}
+                            >
+                              {isExpanded ? "▲" : "▼"}
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openModal("project", { ...p }); }}
+                              style={{
+                                background: "none",
+                                border: "1px solid #e0e0e0",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                                fontSize: 12,
+                                padding: "4px 8px",
+                                color: "#666"
+                              }}
+                              title="Éditer le projet"
+                            >
+                              ✏️
+                            </button>
                           </div>
                         </div>
                         {p.description && <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{p.description}</div>}
@@ -1014,6 +1058,125 @@ export default function App() {
                           {p.estHours > 0 && <span>⏱ {p.estHours}h est.</span>}
                           {p.notes && <span style={{ color: "#bbb" }}>— {p.notes}</span>}
                         </div>
+                        
+                        {/* Expandable task section */}
+                        {isExpanded && (
+                          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
+                            {/* Quick Add Task Form */}
+                            <div style={{ background: "#f9f9f9", borderRadius: 6, padding: 12, marginBottom: 12 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: "#666", marginBottom: 8 }}>Ajouter une tâche</div>
+                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                <input
+                                  type="text"
+                                  placeholder="Nom de la tâche..."
+                                  value={quickTaskForm[p.id]?.name || ""}
+                                  onChange={e => setQuickTaskForm(prev => ({ ...prev, [p.id]: { ...prev[p.id], name: e.target.value } }))}
+                                  style={{ ...s.input, marginBottom: 0, flex: "1 1 200px", fontSize: 13 }}
+                                  onClick={e => e.stopPropagation()}
+                                />
+                                <input
+                                  type="number"
+                                  placeholder="Heures"
+                                  step="0.5"
+                                  value={quickTaskForm[p.id]?.estH || ""}
+                                  onChange={e => setQuickTaskForm(prev => ({ ...prev, [p.id]: { ...prev[p.id], estH: parseFloat(e.target.value) || "" } }))}
+                                  style={{ ...s.input, marginBottom: 0, width: 80, fontSize: 13 }}
+                                  onClick={e => e.stopPropagation()}
+                                />
+                                <input
+                                  type="date"
+                                  value={quickTaskForm[p.id]?.due || ""}
+                                  onChange={e => setQuickTaskForm(prev => ({ ...prev, [p.id]: { ...prev[p.id], due: e.target.value } }))}
+                                  style={{ ...s.input, marginBottom: 0, width: 130, fontSize: 13 }}
+                                  onClick={e => e.stopPropagation()}
+                                />
+                                <select
+                                  value={quickTaskForm[p.id]?.priority || "Moyenne"}
+                                  onChange={e => setQuickTaskForm(prev => ({ ...prev, [p.id]: { ...prev[p.id], priority: e.target.value } }))}
+                                  style={{ ...s.select, marginBottom: 0, width: 100, fontSize: 13 }}
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  <option value="Basse">📦 Basse</option>
+                                  <option value="Moyenne">📋 Moyenne</option>
+                                  <option value="Haute">🔥 Haute</option>
+                                </select>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const formData = quickTaskForm[p.id];
+                                    if (!formData?.name) return;
+                                    
+                                    const newTask = {
+                                      id: "T" + Date.now(),
+                                      name: formData.name,
+                                      project: p.id,
+                                      dept: p.dept,
+                                      status: "À faire",
+                                      priority: formData.priority || "Moyenne",
+                                      estH: formData.estH || 0,
+                                      due: formData.due || "",
+                                      temp: 2,
+                                      createdDate: todayStr,
+                                      passedH: 0
+                                    };
+                                    
+                                    const updated = [...tasks, newTask];
+                                    updateTasks(updated);
+                                    await syncRecord("tasks", newTask);
+                                    
+                                    // Clear form
+                                    setQuickTaskForm(prev => ({ ...prev, [p.id]: {} }));
+                                  }}
+                                  style={{ ...s.btn("primary"), marginBottom: 0, padding: "6px 12px", fontSize: 13 }}
+                                >
+                                  + Ajouter
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Task List */}
+                            {incompleteTasks.length > 0 ? (
+                              <div>
+                                {incompleteTasks.map(task => {
+                                  const priorityIcon = task.priority === "Haute" ? "🔥" : task.priority === "Basse" ? "📦" : "📋";
+                                  return (
+                                    <div
+                                      key={task.id}
+                                      onClick={(e) => { e.stopPropagation(); openModal("task", { ...task }); }}
+                                      style={{
+                                        padding: "8px 12px",
+                                        marginBottom: 6,
+                                        background: "#fff",
+                                        border: "1px solid #e8e8e8",
+                                        borderRadius: 4,
+                                        cursor: "pointer",
+                                        transition: "all 0.15s",
+                                        fontSize: 13
+                                      }}
+                                      onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
+                                      onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+                                    >
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span>
+                                          {priorityIcon} {task.name}
+                                        </span>
+                                        <span style={{ fontSize: 11, color: "#aaa" }}>
+                                          {task.estH > 0 && `${task.estH}h`}
+                                          {task.estH > 0 && task.due && " • "}
+                                          {task.due && task.due}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div style={{ textAlign: "center", color: "#aaa", fontSize: 12, padding: "12px 0" }}>
+                                Aucune tâche en cours
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

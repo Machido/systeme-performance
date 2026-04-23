@@ -189,6 +189,7 @@ export default function App() {
   const [dragOverId, setDragOverId] = useState(null);
   const [kanbanSearch, setKanbanSearch] = useState("");
   const [completionJournal, setCompletionJournal] = useState(null); // {task, project, dept} when completing a task
+  const [journalSaveSuccess, setJournalSaveSuccess] = useState(false); // Show follow-up options after journal save
   const [journalProjectFilter, setJournalProjectFilter] = useState("all");
   const [journalDeptFilter, setJournalDeptFilter] = useState("all");
   const [journalTypeFilter, setJournalTypeFilter] = useState("all");
@@ -496,8 +497,14 @@ export default function App() {
     }
     updateJournal(updated);
     syncRecord("journal", record);
-    setShowModal(null);
-    setCompletionJournal(null);
+    
+    // If this was a task completion journal, show follow-up options
+    if (completionJournal) {
+      setJournalSaveSuccess(true);
+    } else {
+      setShowModal(null);
+      setCompletionJournal(null);
+    }
   };
 
   const saveProject = () => {
@@ -2490,7 +2497,61 @@ export default function App() {
             )}
 
             {showModal === "journal" && (
-              <>
+              journalSaveSuccess ? (
+                // Success screen with follow-up options
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: "#222", marginBottom: 8 }}>Note enregistrée !</div>
+                  <div style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>Autre chose à capturer ?</div>
+                  
+                  <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }}>
+                    <button
+                      onClick={() => {
+                        setJournalSaveSuccess(false);
+                        setForm({
+                          type: "💡 Idée",
+                          dept: completionJournal?.dept || "ops",
+                          project: completionJournal?.project || "",
+                          priority: "Moyenne",
+                          title: "",
+                          description: ""
+                        });
+                      }}
+                      style={{ ...s.btn("primary"), padding: "10px 20px", fontSize: 14 }}
+                    >
+                      💡 Ajouter une Idée
+                    </button>
+                    <button
+                      onClick={() => {
+                        setJournalSaveSuccess(false);
+                        setForm({
+                          type: "🚧 Obstacle",
+                          dept: completionJournal?.dept || "ops",
+                          project: completionJournal?.project || "",
+                          priority: "Moyenne",
+                          title: "",
+                          description: ""
+                        });
+                      }}
+                      style={{ ...s.btn("secondary"), padding: "10px 20px", fontSize: 14 }}
+                    >
+                      🚧 Signaler un Obstacle
+                    </button>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setJournalSaveSuccess(false);
+                      setShowModal(null);
+                      setCompletionJournal(null);
+                    }}
+                    style={{ ...s.btn("ghost"), fontSize: 13 }}
+                  >
+                    ✕ Fermer
+                  </button>
+                </div>
+              ) : (
+                <>
                 <label style={s.label}>Type</label>
                 <select style={s.select} value={form.type || "📝 Note"} onChange={e => setForm({ ...form, type: e.target.value })}>
                   {["📝 Note", "💡 Idée", "🚧 Obstacle"].map(t => <option key={t}>{t}</option>)}
@@ -2544,6 +2605,7 @@ export default function App() {
                   </div>
                 </div>
               </>
+              )
             )}
 
             {showModal === "habit" && (

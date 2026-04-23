@@ -1115,7 +1115,6 @@ export default function App() {
                                       priority: formData.priority || "Moyenne",
                                       estH: formData.estH || 0,
                                       due: formData.due || "",
-                                      temp: 2,
                                       createdDate: todayStr,
                                       passedH: 0
                                     };

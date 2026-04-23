@@ -481,7 +481,11 @@ export default function App() {
   };
 
   const saveJournal = () => {
-    if (!form.title) return;
+    console.log('saveJournal called, form:', form);
+    if (!form.title) {
+      console.log('No title, returning early');
+      return;
+    }
     let updated, record;
     if (completionJournal) {
       const id = "J" + Date.now();

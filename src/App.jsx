@@ -504,7 +504,12 @@ export default function App() {
     
     // If this was a task completion journal, show follow-up options
     if (completionJournal) {
-      setJournalSaveSuccess(true);
+      // Force re-render by closing and reopening modal with success state
+      setShowModal(null);
+      setTimeout(() => {
+        setJournalSaveSuccess(true);
+        setShowModal("journal");
+      }, 50);
     } else {
       setShowModal(null);
       setCompletionJournal(null);

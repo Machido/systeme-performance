@@ -2775,10 +2775,6 @@ export default function App() {
               </div>
             </>)}
 
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button style={s.btn("ghost")} onClick={() => setCompletionJournal(null)}>Passer</button>
-              <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
-            </div>
           </div>
         </div>
       )}

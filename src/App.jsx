@@ -33,7 +33,7 @@ const initialProjects = [
   { id: "P001", name: "Refonte pitch coaching", dept: "sales", status: "En cours", description: "Clarifier l'offre et le message clé", startDate: "2026-01-15", endDate: "2026-03-31", estHours: 20, revenue: 0, notes: "Focus sur la différenciation" },
   { id: "P002", name: "Pipeline Q1 2026", dept: "sales", status: "En cours", description: "Développer 5 nouvelles opportunités", startDate: "2026-01-01", endDate: "2026-03-31", estHours: 30, revenue: 15000, notes: "" },
   { id: "P003", name: "Portefeuille investissement", dept: "ops", status: "En cours", description: "Rebalancer et suivre les positions", startDate: "2026-02-01", endDate: "2026-04-30", estHours: 10, revenue: 0, notes: "Saxo Bank + Stockopedia" },
-  { id: "P004", name: "Livraison client Arnaud", dept: "prod", status: "En cours", description: "Facturation architecte + livrables", startDate: "2026-01-20", endDate: "2026-02-20", estHours: 15, revenue: 3500, notes: "Facture impayée — relancer" },
+  { id: "P004", name: "Livraison client Arnaud", dept: "prod", status: "En cours", description: "Facturation architecte + livrables", startDate: "2026-01-20", endDate: "2026-02-20", estHours: 15, revenue: 3500, notes: "Facture impayée - relancer" },
   { id: "P005", name: "Santé & sport", dept: "res", status: "En cours", description: "Maintenir routine sportive 3x/semaine", startDate: "2026-01-01", endDate: "2026-12-31", estHours: 0, revenue: 0, notes: "" },
   { id: "P006", name: "Nouveau service conseil", dept: "sales", status: "Potentiel", description: "Explorer une offre conseil entreprises PME", startDate: "", endDate: "", estHours: 0, revenue: 8000, notes: "À qualifier en mars" },
 ];
@@ -53,8 +53,8 @@ const initialTasks = [
 
 const initialJournal = [
   { id: "J001", date: "2026-02-26", type: "💡 Idée", temp: 3, title: "Nouveau format atelier coaching", description: "Format 2h intensif plutôt que sessions hebdo", project: "P001", dept: "sales", priority: "Haute", nextAction: "Tester avec un client existant" },
-  { id: "J002", date: "2026-02-25", type: "🚧 Obstacle", temp: 1, title: "Arnaud ne répond plus", description: "3ème relance sans réponse — envisager courrier recommandé", project: "P004", dept: "prod", priority: "Haute", nextAction: "Appel direct vendredi" },
-  { id: "J003", date: "2026-02-24", type: "📝 Note", temp: 4, title: "Bonne session sport", description: "Dans le flow — 45 min sans regarder l'heure", project: "P005", dept: "res", priority: "Basse", nextAction: "" },
+  { id: "J002", date: "2026-02-25", type: "🚧 Obstacle", temp: 1, title: "Arnaud ne répond plus", description: "3ème relance sans réponse - envisager courrier recommandé", project: "P004", dept: "prod", priority: "Haute", nextAction: "Appel direct vendredi" },
+  { id: "J003", date: "2026-02-24", type: "📝 Note", temp: 4, title: "Bonne session sport", description: "Dans le flow - 45 min sans regarder l'heure", project: "P005", dept: "res", priority: "Basse", nextAction: "" },
 ];
 
 const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -354,7 +354,7 @@ export default function App() {
       const logDate = new Date(l.logged_at).toISOString().split("T")[0];
       return l.habit_id === habitId && logDate === dateStr && l.completed === completed;
     });
-    
+
     if (existingLog) {
       // Toggle: remove the log
       const updated = habitLogs.filter(l => l.id !== existingLog.id);
@@ -394,7 +394,7 @@ export default function App() {
       { name: "habits", data: habits },
       { name: "habit_logs", data: habitLogs },
     ];
-    
+
     let exported = [];
     tables.forEach(({ name, data }, index) => {
       if (data.length > 0) {
@@ -402,7 +402,7 @@ export default function App() {
         exported.push(`- ${timestamp}_${name}.csv`);
       }
     });
-    
+
     setTimeout(() => {
       alert(`✅ Export complet lancé!\n\nFichiers téléchargés:\n${exported.join("\n")}`);
     }, tables.length * 200 + 100);
@@ -428,7 +428,7 @@ export default function App() {
     const passedH = ft.reduce((s, t) => s + (t.passedH || 0), 0);
     const avgTemp = filteredJournal.length
       ? (filteredJournal.reduce((s, j) => s + j.temp, 0) / filteredJournal.length).toFixed(1)
-      : "—";
+      : "-";
     const fp = deptFilter === "all" ? projects : projects.filter(p => p.dept === deptFilter);
     const activeProj = fp.filter(p => p.status === "Actif" || p.status === "En bonne voie" || p.status === "En retard").length;
     const completion = ft.length ? Math.round((done.length / ft.length) * 100) : 0;
@@ -442,7 +442,7 @@ export default function App() {
 
   const saveTask = () => {
     if (!form.name) return;
-    
+
     // Auto-correct: if project is a name instead of ID, find the matching project
     if (form.project && !form.project.startsWith('P')) {
       const matchedProject = projects.find(p => p.name === form.project);
@@ -453,7 +453,7 @@ export default function App() {
         return;
       }
     }
-    
+
     let updated, record;
     const prevStatus = form.id ? tasks.find(t => t.id === form.id)?.status : null;
     const wasCompleted = form.id && prevStatus !== "Terminé" && form.status === "Terminé";
@@ -501,7 +501,7 @@ export default function App() {
     }
     updateJournal(updated);
     syncRecord("journal", record);
-    
+
     // If this was a task completion journal, show follow-up options
     if (completionJournal) {
       // Force re-render by closing and reopening modal with success state
@@ -546,7 +546,7 @@ export default function App() {
     setDragging(null);
   };
 
-  // Kanban order sync — keep order in sync with tasks list
+  // Kanban order sync - keep order in sync with tasks list
   useEffect(() => {
     setKanbanOrder(prev => {
       const taskIds = new Set(tasks.map(t => t.id));
@@ -635,6 +635,174 @@ export default function App() {
   const todayTasks = tasks.filter(t => t.due === todayStr && t.status !== "Terminé" && t.status !== "Abandonné");
   const recentTemp = journal.slice(0, 3).map(j => getTempEmoji(j.temp)).join(" ");
 
+  const printFocusProjects = () => {
+    const focusProjects = projects.filter(p => p.focus && p.status !== "Terminé" && p.status !== "Abandonné");
+    if (focusProjects.length === 0) {
+      alert("Aucun projet en focus \ud83d\udd25 à imprimer.");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Projets Focus — Impression</title>
+  <style>
+    @media print {
+      @page { margin: 1.5cm; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #222;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 18pt;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      border-bottom: 2px solid #333;
+      padding-bottom: 8px;
+    }
+    .date {
+      font-size: 9pt;
+      color: #666;
+      margin-bottom: 24px;
+    }
+    .project {
+      page-break-inside: avoid;
+      margin-bottom: 32px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .project-header {
+      font-size: 14pt;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .project-meta {
+      font-size: 9pt;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 10pt;
+      font-weight: 600;
+      margin: 12px 0 6px 0;
+      text-transform: uppercase;
+      color: #333;
+    }
+    .task {
+      font-size: 10pt;
+      margin: 3px 0;
+      padding-left: 16px;
+    }
+    .task.done {
+      color: #888;
+      text-decoration: line-through;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+      font-size: 8pt;
+      color: #888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>PROJETS FOCUS \ud83d\udd25</h1>
+  <div class="date">Imprimé le ${dateStr} à ${timeStr}</div>
+`;
+
+    focusProjects.forEach(p => {
+      const projectTasks = tasks.filter(t => t.project === p.id);
+      const activeTasks = projectTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
+      const completedTasks = projectTasks.filter(t => t.status === "Terminé" || t.status === "Abandonné");
+      
+      const totalEst = projectTasks.reduce((sum, t) => sum + (t.estH || 0), 0);
+      const totalPassed = projectTasks.reduce((sum, t) => sum + (t.passedH || 0), 0);
+      const remaining = Math.max(0, totalEst - totalPassed);
+      const completedCount = completedTasks.length;
+      const totalCount = projectTasks.length;
+      const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      
+      // Vélocité (tâches/semaine)
+      const createdDate = p.created_at ? new Date(p.created_at) : new Date(p.startDate || Date.now());
+      const weeksSinceStart = Math.max(1, Math.floor((Date.now() - createdDate) / (7 * 24 * 60 * 60 * 1000)));
+      const velocity = weeksSinceStart > 0 ? (completedCount / weeksSinceStart).toFixed(1) : "—";
+      
+      // Satisfaction moyenne des notes liées
+      const linkedJournals = journal.filter(j => j.project === p.id && j.type === "\ud83d\udcdd Note" && j.temp != null);
+      const avgSat = linkedJournals.length > 0
+        ? (linkedJournals.reduce((sum, j) => sum + j.temp, 0) / linkedJournals.length).toFixed(1)
+        : "—";
+      
+      const deptInfo = DEPTS.find(d => d.id === p.dept);
+      const deptIcon = deptInfo ? deptInfo.icon : "";
+      
+      html += `
+  <div class="project">
+    <div class="project-header">\ud83d\udd25 ${deptIcon} ${p.name}</div>
+    <div class="project-meta">
+      <strong>Département:</strong> ${deptInfo?.label || p.dept} | <strong>Statut:</strong> ${p.status}<br>
+      <strong>Est:</strong> ${totalEst}h | <strong>Passé:</strong> ${totalPassed}h | <strong>Reste:</strong> ${remaining}h<br>
+      <strong>Deadline:</strong> ${p.endDate || "—"}<br>
+      <strong>Tâches:</strong> ${completedCount}/${totalCount} terminées (${progressPct}%)<br>
+      <strong>Vélocité:</strong> ${velocity} tâches/semaine<br>
+      <strong>Satisfaction moy:</strong> ${avgSat === "—" ? "—" : avgSat + "/10"}
+    </div>
+`;
+
+      if (activeTasks.length > 0) {
+        html += `    <div class="section-title">À faire / En cours</div>\n`;
+        activeTasks.forEach(t => {
+          const prioIcon = t.priority === "Haute" ? "\ud83d\udd25" : t.priority === "Basse" ? "\ud83d\udce6" : "\ud83d\udccb";
+          const hours = t.estH > 0 ? `${t.estH}h` : "";
+          const deadline = t.due ? t.due : "";
+          const meta = [hours, deadline].filter(Boolean).join(", ");
+          html += `    <div class="task">☐ ${prioIcon} ${t.name}${meta ? ` (${meta})` : ""}</div>\n`;
+        });
+      }
+
+      if (completedTasks.length > 0) {
+        html += `    <div class="section-title">Terminées</div>\n`;
+        completedTasks.forEach(t => {
+          const hours = t.estH > 0 ? `${t.estH}h` : "";
+          const deadline = t.due ? t.due : "";
+          const meta = [hours, deadline].filter(Boolean).join(", ");
+          html += `    <div class="task done">☑ ${t.name}${meta ? ` (${meta})` : ""}</div>\n`;
+        });
+      }
+
+      html += `  </div>\n`;
+    });
+
+    html += `
+  <div class="footer">Système Performance — Imprimé le ${dateStr} à ${timeStr}</div>
+</body>
+</html>
+`;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+  };
+
   const s = {
     app: { minHeight: "100vh", background: "#f5f5f5", color: "#222", fontFamily: "sans-serif", fontSize: 14 },
     header: { borderBottom: "1px solid #eee", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", position: "sticky", top: 0, zIndex: 100 },
@@ -690,7 +858,7 @@ export default function App() {
               {d.icon} {d.label}
             </button>
           ))}
-          <button 
+          <button
             style={{ ...s.btn("secondary"), marginLeft: "auto", padding: "6px 12px", fontSize: 13 }}
             onClick={exportAllData}
             title="Télécharger une sauvegarde complète (CSV)">
@@ -742,7 +910,7 @@ export default function App() {
             const bOverdue = isOverdue(b.due) && b.status !== "Terminé" && b.status !== "Abandonné";
             if (aOverdue && !bOverdue) return -1;
             if (!aOverdue && bOverdue) return 1;
-            
+
             // Secondary sort: custom kanban order
             const aIdx = kanbanOrder.indexOf(a.id);
             const bIdx = kanbanOrder.indexOf(b.id);
@@ -755,7 +923,7 @@ export default function App() {
               <div style={{ display: "flex", gap: 16, alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap" }}>
                 <div>
                   <label style={s.label}>Recherche</label>
-                  <input style={{ ...s.input, marginBottom: 0, minWidth: 180 }} placeholder="🔍 Rechercher une tâche…" value={kanbanSearch} onChange={e => setKanbanSearch(e.target.value)} />
+                  <input style={{ ...s.input, marginBottom: 0, minWidth: 180 }} placeholder="🔍 Rechercher une tâche..." value={kanbanSearch} onChange={e => setKanbanSearch(e.target.value)} />
                 </div>
                 <div>
                   <label style={s.label}>Échéance</label>
@@ -843,12 +1011,12 @@ export default function App() {
                               <span style={s.tag("#555")}>{STATUS_ICONS[task.status]} {task.status}</span>
                             </div>
                             <div style={{ fontSize: 11, color: taskOverdue ? "#E85555" : "#aaa", marginTop: 6 }}>
-                              {taskOverdue ? `⚠ Retard: ${task.due}` : `Échéance ${task.due || "—"}`}
+                              {taskOverdue ? `⚠ Retard: ${task.due}` : `Échéance ${task.due || "-"}`}
                             </div>
                           </div>
                         );
                       })}
-                      {colTasks.length === 0 && <div style={{ color: "#ddd", fontSize: 13, textAlign: "center", padding: "20px 0" }}>—</div>}
+                      {colTasks.length === 0 && <div style={{ color: "#ddd", fontSize: 13, textAlign: "center", padding: "20px 0" }}>-</div>}
                     </div>
                   );
                 })}
@@ -862,7 +1030,7 @@ export default function App() {
           <div style={{ maxWidth: 700 }}>
             {/* Today */}
             <div style={s.section}>
-              <div style={s.sectionTitle}><span>AUJOURD'HUI — {formatTodayLabel()}</span></div>
+              <div style={s.sectionTitle}><span>AUJOURD'HUI - {formatTodayLabel()}</span></div>
               {todayTasks.length === 0
                 ? <div style={{ ...s.card, color: "#aaa" }}>Aucune tâche aujourd'hui.</div>
                 : todayTasks.map(t => (
@@ -887,7 +1055,7 @@ export default function App() {
                   ["Tâches actives", tasks.filter(t => t.status === "En cours").length, "#4A90D9"],
                   ["En retard", tasks.filter(t => isOverdue(t.due) && t.status !== "Terminé" && t.status !== "Abandonné").length, "#E85555"],
                   ["Cette semaine", tasks.filter(t => t.passedH > 0).reduce((s, t) => s + t.passedH, 0).toFixed(1) + "h", "#6BBF6B"],
-                  ["Température", recentTemp || "—", "#B07FE8"],
+                  ["Température", recentTemp || "-", "#B07FE8"],
                 ].map(([label, val, color]) => (
                   <div key={label} style={s.kpiCard(color)}>
                     <div style={s.kpiValue(color)}>{val}</div>
@@ -930,7 +1098,10 @@ export default function App() {
                   onChange={e => setProjectSearch(e.target.value)}
                 />
               </div>
-              <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>+ Nouveau projet</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button style={s.btn("ghost")} onClick={() => printFocusProjects()}>🖨️ Imprimer focus</button>
+                <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>＋ Nouveau projet</button>
+              </div>
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
               <div>
@@ -955,7 +1126,7 @@ export default function App() {
             {PROJECT_STATUSES.map(ps => {
               // Apply status filter
               if (projectStatusFilter !== "all" && ps !== projectStatusFilter) return null;
-              
+
               // Apply department, focus, and search filters
               let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
               if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
@@ -982,7 +1153,7 @@ export default function App() {
                     const pct = projTasks.length ? Math.round((doneTasks / projTasks.length) * 100) : 0;
                     const deptColor = getDeptColor(p.dept);
                     const isExpanded = expandedProjects.has(p.id);
-                    
+
                     const toggleExpand = (e) => {
                       e.stopPropagation();
                       setExpandedProjects(prev => {
@@ -992,7 +1163,7 @@ export default function App() {
                         return next;
                       });
                     };
-                    
+
                     return (
                       <div key={p.id} style={{ ...s.card, borderLeft: `3px solid ${deptColor}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
@@ -1072,9 +1243,9 @@ export default function App() {
                         <div style={{ display: "flex", gap: 8, fontSize: 11, color: "#aaa" }}>
                           {p.endDate && <span>📅 {p.endDate}</span>}
                           {p.estHours > 0 && <span>⏱ {p.estHours}h est.</span>}
-                          {p.notes && <span style={{ color: "#bbb" }}>— {p.notes}</span>}
+                          {p.notes && <span style={{ color: "#bbb" }}>- {p.notes}</span>}
                         </div>
-                        
+
                         {/* Expandable task section */}
                         {isExpanded && (
                           <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
@@ -1121,7 +1292,7 @@ export default function App() {
                                     e.stopPropagation();
                                     const formData = quickTaskForm[p.id];
                                     if (!formData?.name) return;
-                                    
+
                                     const newTask = {
                                       id: "T" + Date.now(),
                                       name: formData.name,
@@ -1134,11 +1305,11 @@ export default function App() {
                                       createdDate: todayStr,
                                       passedH: 0
                                     };
-                                    
+
                                     const updated = [...tasks, newTask];
                                     updateTasks(updated);
                                     await syncRecord("tasks", newTask);
-                                    
+
                                     // Clear form
                                     setQuickTaskForm(prev => ({ ...prev, [p.id]: {} }));
                                   }}
@@ -1148,7 +1319,7 @@ export default function App() {
                                 </button>
                               </div>
                             </div>
-                            
+
                             {/* Task List */}
                             {incompleteTasks.length > 0 ? (
                               <div>
@@ -1205,13 +1376,13 @@ export default function App() {
         {tab === "habits" && (() => {
           const activeHabits = habits.filter(h => !h.archived);
           const filteredHabits = habitDeptFilter === "all" ? activeHabits : activeHabits.filter(h => h.department_id === habitDeptFilter);
-          
+
           // Group by department
           const habitsByDept = DEPTS.map(dept => ({
             ...dept,
             habits: filteredHabits.filter(h => h.department_id === dept.id),
           })).filter(d => d.habits.length > 0);
-          
+
           const ungrouped = filteredHabits.filter(h => !h.department_id);
 
           // Today's habits for quick dashboard
@@ -1225,7 +1396,7 @@ export default function App() {
           return (
             <div>
               <div style={{ ...s.sectionTitle, marginBottom: 16 }}>
-                <span>HABITUDES — SUIVI</span>
+                <span>HABITUDES - SUIVI</span>
                 <button style={s.btn("primary")} onClick={() => {
                   setForm({ habit_type: "acquire", target_days: 60, allowed_misses: 0, icon: "✅" });
                   setShowModal("habit");
@@ -1235,7 +1406,7 @@ export default function App() {
               {/* Today's Quick Dashboard */}
               <div style={{ ...s.card, marginBottom: 24, background: "#f9f9ff", border: "1px solid #e0e0ff" }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#5b4ef8" }}>
-                  📅 Aujourd'hui — {todayStr}
+                  📅 Aujourd'hui - {todayStr}
                 </div>
                 <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>
                   {todayComplete}/{activeHabits.length} habitudes complétées {activeHabits.length > 0 && `(${Math.round((todayComplete / activeHabits.length) * 100)}%)`}
@@ -1259,7 +1430,7 @@ export default function App() {
                           fontWeight: logged ? 600 : 400,
                           transition: "all 0.2s",
                         }}
-                        title={logged ? `${todayCount}× aujourd'hui — cliquer pour ajouter` : "Cliquer pour marquer comme fait"}>
+                        title={logged ? `${todayCount}× aujourd'hui - cliquer pour ajouter` : "Cliquer pour marquer comme fait"}>
                         {habit.icon} {habit.name} {logged && `×${todayCount}`}
                       </button>
                     );
@@ -1335,10 +1506,10 @@ export default function App() {
                             </button>
                             <button
                               onClick={() => {
-                                setForm({ 
+                                setForm({
                                   _habit: habit,
-                                  logged_at: getLocalDateTimeStr(), 
-                                  completed: true 
+                                  logged_at: getLocalDateTimeStr(),
+                                  completed: true
                                 });
                                 setShowModal("habitLog");
                               }}
@@ -1379,7 +1550,7 @@ export default function App() {
                             const hasCompleted = day.completed > 0;
                             const hasFailed = day.failed > 0;
                             const isEmpty = !hasCompleted && !hasFailed;
-                            
+
                             return (
                               <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                                 <div
@@ -1485,10 +1656,10 @@ export default function App() {
                             </button>
                             <button
                               onClick={() => {
-                                setForm({ 
+                                setForm({
                                   _habit: habit,
-                                  logged_at: getLocalDateTimeStr(), 
-                                  completed: true 
+                                  logged_at: getLocalDateTimeStr(),
+                                  completed: true
                                 });
                                 setShowModal("habitLog");
                               }}
@@ -1529,7 +1700,7 @@ export default function App() {
                             const hasFailed = day.failed > 0;
                             const isEmpty = !hasCompleted && !hasFailed;
                             const habitColor = "#888"; // Default color for ungrouped
-                            
+
                             return (
                               <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                                 <div
@@ -1592,7 +1763,7 @@ export default function App() {
           // Shared style helpers
           const toggleStyle = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
           const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
-          
+
           const fp = deptFilter === "all" ? projects : projects.filter(p => p.dept === deptFilter);
           const ft = filteredTasks.filter(t => t.status !== "Abandonné");
           const done = ft.filter(t => t.status === "Terminé").length;
@@ -1686,20 +1857,20 @@ export default function App() {
             ? (tempLine.reduce((s, t) => s + t.temp, 0) / tempLine.length)
             : null;
           const avgScoreRounded = avgScore !== null ? Math.round(avgScore * 10) / 10 : null;
-          const avgScoreEmoji = avgScore !== null ? getTempEmoji(Math.round(avgScore)) : "—";
+          const avgScoreEmoji = avgScore !== null ? getTempEmoji(Math.round(avgScore)) : "-";
 
           return (
             <div>
               <div style={s.sectionTitle}>
-                <span>DASHBOARD — {deptFilter === "all" ? "TOUS DÉPARTEMENTS" : DEPTS.find(d => d.id === deptFilter)?.label.toUpperCase()}</span>
+                <span>DASHBOARD - {deptFilter === "all" ? "TOUS DÉPARTEMENTS" : DEPTS.find(d => d.id === deptFilter)?.label.toUpperCase()}</span>
               </div>
 
-              {/* Row 0: Satisfaction Score — compact */}
+              {/* Row 0: Satisfaction Score - compact */}
               <div style={{ ...chartCard, display: "flex", alignItems: "center", gap: 20, padding: "18px 24px", marginBottom: 16 }}>
                 <div style={{ fontSize: 48 }}>{avgScoreEmoji}</div>
                 <div>
                   <div style={chartTitle}>Score de satisfaction</div>
-                  <div style={{ fontSize: 32, fontWeight: 800, color: "#5b4ef8" }}>{avgScoreRounded !== null ? `${avgScoreRounded}/10` : "—"}</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: "#5b4ef8" }}>{avgScoreRounded !== null ? `${avgScoreRounded}/10` : "-"}</div>
                   <div style={{ fontSize: 12, color: "#aaa" }}>{tempLine.length} entrée{tempLine.length > 1 ? "s" : ""} journal</div>
                 </div>
               </div>
@@ -1728,7 +1899,7 @@ export default function App() {
                   <div style={{ ...chartCard, marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={chartTitle}>Vélocité — Tâches créées vs complétées</div>
+                        <div style={chartTitle}>Vélocité - Tâches créées vs complétées</div>
                         <div style={{ display: "flex", gap: 4 }}>
                           {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                             <button key={k} style={toggleStyle(veloPeriod === k)} onClick={() => setVeloPeriod(k)}>{l}</button>
@@ -1762,7 +1933,7 @@ export default function App() {
                     }
                   </div>
 
-                  {/* Satisfaction trend — full width */}
+                  {/* Satisfaction trend - full width */}
                   {(() => {
                     const satData = aggregateByPeriod(tempLine, satPeriod, ["temp"], "avg");
                     const toggleStyle2 = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
@@ -1793,30 +1964,30 @@ export default function App() {
                     );
                   })()}
 
-                  {/* Habit tracking — logs per habit over time */}
+                  {/* Habit tracking - logs per habit over time */}
                   {(() => {
                     if (!habits.length) return null;
-                    
+
                     // Build time series: each date has a score per habit
                     // +1 for completed, -1 for failed (completed=false), 0 for missing days
                     const dateMap = {};
                     const habitColors = ["#4A90D9", "#E8A838", "#6BBF6B", "#B07FE8", "#E85555", "#5b4ef8", "#FF6B9D", "#4ECDC4"];
-                    
+
                     // Get all unique habit names
                     const habitNames = [...new Set(habits.map(h => h.name))];
-                    
+
                     // Initialize visibleHabits if needed (on first render of this section)
                     if (habitNames.length > 0 && Object.keys(visibleHabits).length === 0) {
                       const initial = {};
                       habitNames.forEach(name => { initial[name] = true; });
                       setVisibleHabits(initial);
                     }
-                    
+
                     // Toggle habit visibility
                     const toggleHabit = (name) => {
                       setVisibleHabits(prev => ({ ...prev, [name]: !prev[name] }));
                     };
-                    
+
                     // Process all logs
                     habitLogs.forEach(log => {
                       const date = log.logged_at.split('T')[0]; // YYYY-MM-DD
@@ -1839,7 +2010,7 @@ export default function App() {
                       const startDate = new Date(dates[0]);
                       const endDate = new Date(dates[dates.length - 1]);
                       const currentDate = new Date(startDate);
-                      
+
                       while (currentDate <= endDate) {
                         const dateStr = currentDate.toISOString().split('T')[0];
                         if (!dateMap[dateStr]) {
@@ -1854,7 +2025,7 @@ export default function App() {
                     if (!habitTrackingData.length) return null;
 
                     // Aggregate habit data by period
-                    const habitDataAggregated = habitTrackingData.length > 0 
+                    const habitDataAggregated = habitTrackingData.length > 0
                       ? aggregateByPeriod(habitTrackingData, habitPeriod, habitNames, "sum")
                       : [];
 
@@ -1868,19 +2039,19 @@ export default function App() {
                             ))}
                           </div>
                         </div>
-                        
+
                         {/* Habit filter checkboxes */}
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #f0f0f0" }}>
                           {habitNames.map((name, i) => {
                             const color = habitColors[i % habitColors.length];
                             const isVisible = visibleHabits[name];
                             return (
-                              <label 
-                                key={name} 
-                                style={{ 
-                                  display: "flex", 
-                                  alignItems: "center", 
-                                  gap: 6, 
+                              <label
+                                key={name}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
                                   padding: "6px 10px",
                                   borderRadius: 6,
                                   border: `1px solid ${isVisible ? color : "#e0e0e0"}`,
@@ -1892,9 +2063,9 @@ export default function App() {
                                   transition: "all 0.2s ease"
                                 }}
                               >
-                                <input 
-                                  type="checkbox" 
-                                  checked={isVisible} 
+                                <input
+                                  type="checkbox"
+                                  checked={isVisible}
                                   onChange={() => toggleHabit(name)}
                                   style={{ cursor: "pointer" }}
                                 />
@@ -1904,7 +2075,7 @@ export default function App() {
                             );
                           })}
                         </div>
-                        
+
                         <ResponsiveContainer width="100%" height={240}>
                           <LineChart data={habitDataAggregated}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -1915,13 +2086,13 @@ export default function App() {
                             {habitNames.filter(name => visibleHabits[name]).map((name, i) => {
                               const originalIndex = habitNames.indexOf(name);
                               return (
-                                <Line 
-                                  key={name} 
-                                  type="monotone" 
-                                  dataKey={name} 
-                                  stroke={habitColors[originalIndex % habitColors.length]} 
-                                  strokeWidth={2} 
-                                  dot={{ r: 3 }} 
+                                <Line
+                                  key={name}
+                                  type="monotone"
+                                  dataKey={name}
+                                  stroke={habitColors[originalIndex % habitColors.length]}
+                                  strokeWidth={2}
+                                  dot={{ r: 3 }}
                                   activeDot={{ r: 5 }}
                                 />
                               );
@@ -2141,7 +2312,7 @@ export default function App() {
               cols: [
                 { key: "id", label: "ID", w: 60, readonly: true },
                 { key: "name", label: "Nom", w: 180 },
-                { key: "project", label: "Projet", w: 80, type: "select", options: [{ value: "", label: "—" }, ...projects.map(p => ({ value: p.id, label: p.id }))] },
+                { key: "project", label: "Projet", w: 80, type: "select", options: [{ value: "", label: "-" }, ...projects.map(p => ({ value: p.id, label: p.id }))] },
                 { key: "dept", label: "Dept", w: 80, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon })) },
                 { key: "status", label: "Statut", w: 100, type: "select", options: STATUSES.map(s => ({ value: s, label: s })) },
                 { key: "priority", label: "Priorité", w: 80, type: "select", options: PRIORITIES.map(p => ({ value: p, label: p })) },
@@ -2176,7 +2347,7 @@ export default function App() {
                 { key: "name", label: "Nom", w: 180 },
                 { key: "description", label: "Description", w: 200 },
                 { key: "department_id", label: "Dept", w: 80, type: "select", options: DEPTS.map(d => ({ value: d.id, label: d.icon + " " + d.label })) },
-                { key: "project_id", label: "Projet", w: 80, type: "select", options: [{ value: "", label: "—" }, ...projects.map(p => ({ value: p.id, label: p.id }))] },
+                { key: "project_id", label: "Projet", w: 80, type: "select", options: [{ value: "", label: "-" }, ...projects.map(p => ({ value: p.id, label: p.id }))] },
                 { key: "habit_type", label: "Type", w: 90, type: "select", options: [{ value: "acquire", label: "🟢 Acquérir" }, { value: "eliminate", label: "🔴 Éliminer" }] },
                 { key: "icon", label: "Icône", w: 60 },
                 { key: "target_days", label: "Jours cible", w: 90, type: "number" },
@@ -2229,10 +2400,10 @@ export default function App() {
             }
 
             // Display value
-            let display = val ?? "—";
+            let display = val ?? "-";
             if (col.key === "dept") display = getDeptIcon(val) || val;
             if (col.key === "temp") display = getTempEmoji(Number(val));
-            if (col.key === "project") display = val || "—";
+            if (col.key === "project") display = val || "-";
             if (col.type === "select" && col.options) {
               const opt = col.options.find(o => o.value === val);
               if (opt) display = opt.label;
@@ -2301,7 +2472,7 @@ export default function App() {
                     <thead>
                       <tr>
                         <th style={{ ...thStyle, width: 30, textAlign: "center" }}>
-                          <input type="checkbox" 
+                          <input type="checkbox"
                             checked={data.length > 0 && selectedRows.size === data.length}
                             onChange={e => {
                               if (e.target.checked) setSelectedRows(new Set(data.map(r => r.id)));
@@ -2356,8 +2527,8 @@ export default function App() {
           <div style={s.modalBox}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                {showModal === "task" ? (form.id ? "Modifier tâche" : "Nouvelle tâche") : 
-                 showModal === "journal" ? (form.id ? "Modifier entrée journal" : "Nouvelle entrée journal") : 
+                {showModal === "task" ? (form.id ? "Modifier tâche" : "Nouvelle tâche") :
+                 showModal === "journal" ? (form.id ? "Modifier entrée journal" : "Nouvelle entrée journal") :
                  showModal === "project" ? (form.id ? "Modifier projet" : "Nouveau projet") :
                  showModal === "habit" ? (form.id ? "Modifier habitude" : "Nouvelle habitude") :
                  showModal === "habitLog" ? "Logger habitude" : ""}
@@ -2368,14 +2539,14 @@ export default function App() {
             {showModal === "task" && (
               <>
                 <label style={s.label}>Nom de la tâche</label>
-                <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ce qui doit être fait…" />
+                <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ce qui doit être fait..." />
 
                 <label style={s.label}>Projet</label>
                 <select style={s.select} value={form.project || ""} onChange={e => {
                   const proj = projects.find(p => p.id === e.target.value);
                   setForm({ ...form, project: e.target.value, dept: proj ? proj.dept : form.dept });
                 }}>
-                  <option value="">— Sans projet —</option>
+                  <option value="">- Sans projet -</option>
                   {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
                     <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
                   ))}
@@ -2462,10 +2633,10 @@ export default function App() {
                 </label>
 
                 <label style={s.label}>Nom du projet</label>
-                <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nom court et descriptif…" />
+                <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nom court et descriptif..." />
 
                 <label style={s.label}>Description</label>
-                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Pourquoi ce projet existe…" />
+                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Pourquoi ce projet existe..." />
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
@@ -2505,7 +2676,7 @@ export default function App() {
                 </div>
 
                 <label style={s.label}>Notes</label>
-                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Contexte, blocages, prochaines étapes…" />
+                <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Contexte, blocages, prochaines étapes..." />
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -2526,7 +2697,7 @@ export default function App() {
                   <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: "#222", marginBottom: 8 }}>Note enregistrée !</div>
                   <div style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>Autre chose à capturer ?</div>
-                  
+
                   <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }}>
                     <button
                       onClick={() => {
@@ -2561,7 +2732,7 @@ export default function App() {
                       🚧 Signaler un Obstacle
                     </button>
                   </div>
-                  
+
                   <button
                     onClick={() => {
                       setJournalSaveSuccess(false);
@@ -2581,14 +2752,14 @@ export default function App() {
                 </select>
 
                 <label style={s.label}>Titre</label>
-                <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots…" />
+                <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
 
                 <label style={s.label}>Description</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
 
                 <label style={s.label}>Projet (optionnel)</label>
                 <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
-                  <option value="">— Sans projet —</option>
+                  <option value="">- Sans projet -</option>
                   {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
                     <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
                   ))}
@@ -2613,7 +2784,7 @@ export default function App() {
                   <label style={s.label}>Température (0-10)</label>
                   <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
                     {TEMPS.map(t => (
-                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
+                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
                     ))}
                   </div>
                 </>)}
@@ -2657,14 +2828,14 @@ export default function App() {
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Département</label>
                     <select style={s.select} value={form.department_id || ""} onChange={e => setForm({ ...form, department_id: e.target.value })}>
-                      <option value="">— Sans département —</option>
+                      <option value="">- Sans département -</option>
                       {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Projet (optionnel)</label>
                     <select style={s.select} value={form.project_id || ""} onChange={e => setForm({ ...form, project_id: e.target.value })}>
-                      <option value="">— Sans projet —</option>
+                      <option value="">- Sans projet -</option>
                       {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
                     </select>
                   </div>
@@ -2749,7 +2920,7 @@ export default function App() {
           <div style={s.modalBox}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                ✅ Tâche terminée — Capturer une note ?
+                ✅ Tâche terminée - Capturer une note ?
               </div>
               <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => setCompletionJournal(null)}>×</button>
             </div>
@@ -2764,7 +2935,7 @@ export default function App() {
             </select>
 
             <label style={s.label}>Titre</label>
-            <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots…" />
+            <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
 
             <label style={s.label}>Description</label>
             <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Qu'avez-vous appris ? Que retenir ?" />
@@ -2773,7 +2944,7 @@ export default function App() {
               <label style={s.label}>Température (0-10)</label>
               <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
                 {TEMPS.map(t => (
-                  <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
+                  <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
                 ))}
               </div>
             </>)}

@@ -2717,17 +2717,6 @@ export default function App() {
                 <label style={s.label}>Note (optionnel)</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.note || ""} onChange={e => setForm({ ...form, note: e.target.value })} placeholder={form.completed === false ? "Pourquoi avez-vous manqué ?" : "Contexte ou observations..."} />
 
-                <div style={s.row}>
-                  <div style={{ flex: 1 }}>
-                    <label style={s.label}>Temps passé (minutes)</label>
-                    <input type="number" style={s.input} value={form.time_spent_minutes || ""} onChange={e => setForm({ ...form, time_spent_minutes: parseInt(e.target.value) || null })} placeholder="Ex: 30" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={s.label}>Temp (1-10)</label>
-                    <input type="number" min="1" max="10" style={s.input} value={form.temp || ""} onChange={e => setForm({ ...form, temp: parseInt(e.target.value) || null })} placeholder="Humeur" />
-                  </div>
-                </div>
-
                     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                       <button style={s.btn("ghost")} onClick={() => { setShowModal(null); setForm({}); }}>Annuler</button>
                       <button style={s.btn("primary")} onClick={saveHabitLog}>Enregistrer</button>

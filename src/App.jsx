@@ -2263,8 +2263,22 @@ export default function App() {
                   {selectedRows.size > 0 && (
                     <button style={s.btn("danger")} onClick={async () => {
                       if (window.confirm(`Supprimer ${selectedRows.size} ligne(s) ?`)) {
+                        // Delete all from Supabase first
                         for (const id of selectedRows) {
-                          await deleteRow(dataTab, id);
+                          await deleteRecord(dataTab, id);
+                        }
+                        // Then update local state in one batch
+                        const idsToDelete = new Set(selectedRows);
+                        if (dataTab === "projects") {
+                          updateProjects(projects.filter(p => !idsToDelete.has(p.id)));
+                        } else if (dataTab === "tasks") {
+                          updateTasks(tasks.filter(t => !idsToDelete.has(t.id)));
+                        } else if (dataTab === "journal") {
+                          updateJournal(journal.filter(j => !idsToDelete.has(j.id)));
+                        } else if (dataTab === "habits") {
+                          updateHabits(habits.filter(h => !idsToDelete.has(h.id)));
+                        } else if (dataTab === "habit_logs") {
+                          updateHabitLogs(habitLogs.filter(hl => !idsToDelete.has(hl.id)));
                         }
                         setSelectedRows(new Set());
                       }

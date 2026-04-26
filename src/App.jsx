@@ -2757,10 +2757,10 @@ export default function App() {
                 {!completionJournal && (<>
                   <label style={s.label}>Description</label>
                   <textarea style={{ ...s.input, resize: "vertical", minHeight: 50 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
-                  
+
                   <label style={s.label}>Projet (optionnel)</label>
                   <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
-                    <option value="">— Sans projet —</option>
+                    <option value="">- Sans projet -</option>
                     {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
                       <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
                     ))}
@@ -2939,18 +2939,19 @@ export default function App() {
             <label style={s.label}>Titre</label>
             <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
 
-            <label style={s.label}>Description</label>
-            <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Qu'avez-vous appris ? Que retenir ?" />
-
             {form.type === "📝 Note" && (<>
               <label style={s.label}>Température (0-10)</label>
-              <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" }}>
                 {TEMPS.map(t => (
-                  <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
+                  <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
                 ))}
               </div>
             </>)}
 
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+              <button style={s.btn("ghost")} onClick={() => setCompletionJournal(null)}>Passer</button>
+              <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
+            </div>
           </div>
         </div>
       )}

@@ -504,12 +504,7 @@ export default function App() {
 
     // If this was a task completion journal, show follow-up options
     if (completionJournal) {
-      // Force re-render by closing and reopening modal with success state
-      setShowModal(null);
-      setTimeout(() => {
-        setJournalSaveSuccess(true);
-        setShowModal("journal");
-      }, 50);
+      setJournalSaveSuccess(true);
     } else {
       setShowModal(null);
       setCompletionJournal(null);
@@ -2920,38 +2915,95 @@ export default function App() {
       {completionJournal && (
         <div style={s.modal} onClick={e => e.target === e.currentTarget && setCompletionJournal(null)}>
           <div style={s.modalBox}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                ✅ Tâche terminée - Capturer une note ?
+            {journalSaveSuccess ? (
+              // Success screen with follow-up options
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#222", marginBottom: 8 }}>Note enregistrée !</div>
+                <div style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>Autre chose à capturer ?</div>
+                
+                <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }}>
+                  <button
+                    onClick={() => {
+                      setJournalSaveSuccess(false);
+                      setForm({
+                        type: "💡 Idée",
+                        dept: completionJournal?.dept || "ops",
+                        project: completionJournal?.project || "",
+                        priority: "Moyenne",
+                        title: "",
+                        description: ""
+                      });
+                    }}
+                    style={{ ...s.btn("primary"), padding: "10px 20px", fontSize: 14 }}
+                  >
+                    💡 Ajouter une Idée
+                  </button>
+                  <button
+                    onClick={() => {
+                      setJournalSaveSuccess(false);
+                      setForm({
+                        type: "🚧 Obstacle",
+                        dept: completionJournal?.dept || "ops",
+                        project: completionJournal?.project || "",
+                        priority: "Moyenne",
+                        title: "",
+                        description: ""
+                      });
+                    }}
+                    style={{ ...s.btn("secondary"), padding: "10px 20px", fontSize: 14 }}
+                  >
+                    🚧 Signaler un Obstacle
+                  </button>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setJournalSaveSuccess(false);
+                    setCompletionJournal(null);
+                  }}
+                  style={{ ...s.btn("ghost"), fontSize: 13 }}
+                >
+                  ✕ Fermer
+                </button>
               </div>
-              <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => setCompletionJournal(null)}>×</button>
-            </div>
+            ) : (
+              // Form
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
+                    ✅ Tâche terminée — Capturer une note ?
+                  </div>
+                  <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => setCompletionJournal(null)}>×</button>
+                </div>
 
-            <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
-              📋 {completionJournal.taskName}
-            </div>
+                <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
+                  📋 {completionJournal.taskName}
+                </div>
 
-            <label style={s.label}>Type</label>
-            <select style={s.select} value={form.type || "📝 Note"} onChange={e => setForm({ ...form, type: e.target.value })}>
-              {["📝 Note", "💡 Idée", "🚧 Obstacle"].map(t => <option key={t}>{t}</option>)}
-            </select>
+                <label style={s.label}>Type</label>
+                <select style={s.select} value={form.type || "📝 Note"} onChange={e => setForm({ ...form, type: e.target.value })}>
+                  {["📝 Note", "💡 Idée", "🚧 Obstacle"].map(t => <option key={t}>{t}</option>)}
+                </select>
 
-            <label style={s.label}>Titre</label>
-            <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
+                <label style={s.label}>Titre</label>
+                <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
 
-            {form.type === "📝 Note" && (<>
-              <label style={s.label}>Température (0-10)</label>
-              <div style={{ display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" }}>
-                {TEMPS.map(t => (
-                  <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
-                ))}
-              </div>
-            </>)}
+                {form.type === "📝 Note" && (<>
+                  <label style={s.label}>Température (0-10)</label>
+                  <div style={{ display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" }}>
+                    {TEMPS.map(t => (
+                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
+                    ))}
+                  </div>
+                </>)}
 
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-              <button style={s.btn("ghost")} onClick={() => setCompletionJournal(null)}>Passer</button>
-              <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
-            </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+                  <button style={s.btn("ghost")} onClick={() => setCompletionJournal(null)}>Passer</button>
+                  <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

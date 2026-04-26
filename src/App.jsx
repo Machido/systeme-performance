@@ -2913,7 +2913,12 @@ export default function App() {
 
       {/* ── COMPLETION JOURNAL MODAL ── */}
       {completionJournal && (
-        <div style={s.modal} onClick={e => e.target === e.currentTarget && setCompletionJournal(null)}>
+        <div style={s.modal} onClick={e => {
+          if (e.target === e.currentTarget) {
+            setCompletionJournal(null);
+            setJournalSaveSuccess(false);
+          }
+        }}>
           <div style={s.modalBox}>
             {journalSaveSuccess ? (
               // Success screen with follow-up options
@@ -2974,7 +2979,7 @@ export default function App() {
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
                     ✅ Tâche terminée — Capturer une note ?
                   </div>
-                  <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => setCompletionJournal(null)}>×</button>
+                  <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => { setCompletionJournal(null); setJournalSaveSuccess(false); }}>×</button>
                 </div>
 
                 <div style={{ background: "#f0eeff", border: "1px solid #d8d0ff", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#5b4ef8" }}>
@@ -2999,7 +3004,7 @@ export default function App() {
                 </>)}
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-                  <button style={s.btn("ghost")} onClick={() => setCompletionJournal(null)}>Passer</button>
+                  <button style={s.btn("ghost")} onClick={() => { setCompletionJournal(null); setJournalSaveSuccess(false); }}>Passer</button>
                   <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
                 </div>
               </>

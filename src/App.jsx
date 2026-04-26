@@ -652,7 +652,7 @@ export default function App() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Projets Focus — Impression</title>
+  <title>Projets Focus - Impression</title>
   <style>
     @media print {
       @page { margin: 1.5cm; }
@@ -733,38 +733,38 @@ export default function App() {
       const projectTasks = tasks.filter(t => t.project === p.id);
       const activeTasks = projectTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
       const completedTasks = projectTasks.filter(t => t.status === "Terminé" || t.status === "Abandonné");
-      
+
       const totalEst = projectTasks.reduce((sum, t) => sum + (t.estH || 0), 0);
       const totalPassed = projectTasks.reduce((sum, t) => sum + (t.passedH || 0), 0);
       const remaining = Math.max(0, totalEst - totalPassed);
       const completedCount = completedTasks.length;
       const totalCount = projectTasks.length;
       const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-      
+
       // Vélocité (tâches/semaine)
       const createdDate = p.created_at ? new Date(p.created_at) : new Date(p.startDate || Date.now());
       const weeksSinceStart = Math.max(1, Math.floor((Date.now() - createdDate) / (7 * 24 * 60 * 60 * 1000)));
-      const velocity = weeksSinceStart > 0 ? (completedCount / weeksSinceStart).toFixed(1) : "—";
-      
+      const velocity = weeksSinceStart > 0 ? (completedCount / weeksSinceStart).toFixed(1) : "-";
+
       // Satisfaction moyenne des notes liées
       const linkedJournals = journal.filter(j => j.project === p.id && j.type === "\ud83d\udcdd Note" && j.temp != null);
       const avgSat = linkedJournals.length > 0
         ? (linkedJournals.reduce((sum, j) => sum + j.temp, 0) / linkedJournals.length).toFixed(1)
-        : "—";
-      
+        : "-";
+
       const deptInfo = DEPTS.find(d => d.id === p.dept);
       const deptIcon = deptInfo ? deptInfo.icon : "";
-      
+
       html += `
   <div class="project">
     <div class="project-header">\ud83d\udd25 ${deptIcon} ${p.name}</div>
     <div class="project-meta">
       <strong>Département:</strong> ${deptInfo?.label || p.dept} | <strong>Statut:</strong> ${p.status}<br>
       <strong>Est:</strong> ${totalEst}h | <strong>Passé:</strong> ${totalPassed}h | <strong>Reste:</strong> ${remaining}h<br>
-      <strong>Deadline:</strong> ${p.endDate || "—"}<br>
+      <strong>Deadline:</strong> ${p.endDate || "-"}<br>
       <strong>Tâches:</strong> ${completedCount}/${totalCount} terminées (${progressPct}%)<br>
       <strong>Vélocité:</strong> ${velocity} tâches/semaine<br>
-      <strong>Satisfaction moy:</strong> ${avgSat === "—" ? "—" : avgSat + "/10"}
+      <strong>Satisfaction moy:</strong> ${avgSat === "-" ? "-" : avgSat + "/10"}
     </div>
 `;
 
@@ -793,7 +793,7 @@ export default function App() {
     });
 
     html += `
-  <div class="footer">Système Performance — Imprimé le ${dateStr} à ${timeStr}</div>
+  <div class="footer">Système Performance - Imprimé le ${dateStr} à ${timeStr}</div>
 </body>
 </html>
 `;
@@ -1100,7 +1100,7 @@ export default function App() {
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={s.btn("ghost")} onClick={() => printFocusProjects()}>🖨️ Imprimer focus</button>
-                <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>＋ Nouveau projet</button>
+                <button style={s.btn("primary")} onClick={() => openModal("project", { status: "Potentiel", dept: deptFilter === "all" ? "ops" : deptFilter, estHours: 0, revenue: 0 })}>+ Nouveau projet</button>
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -2755,36 +2755,38 @@ export default function App() {
                 <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
 
                 <label style={s.label}>Description</label>
-                <textarea style={{ ...s.input, resize: "vertical", minHeight: 70 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
+                <textarea style={{ ...s.input, resize: "vertical", minHeight: 50 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
 
-                <label style={s.label}>Projet (optionnel)</label>
-                <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
-                  <option value="">- Sans projet -</option>
-                  {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
-                    <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
-                  ))}
-                </select>
+                {!completionJournal && (<>
+                  <label style={s.label}>Projet (optionnel)</label>
+                  <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
+                    <option value="">— Sans projet —</option>
+                    {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
+                      <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
+                    ))}
+                  </select>
 
-                <div style={s.row}>
-                  <div style={{ flex: 1 }}>
-                    <label style={s.label}>Département</label>
-                    <select style={s.select} value={form.dept || "ops"} onChange={e => setForm({ ...form, dept: e.target.value })}>
-                      {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
-                    </select>
+                  <div style={s.row}>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Département</label>
+                      <select style={s.select} value={form.dept || "ops"} onChange={e => setForm({ ...form, dept: e.target.value })}>
+                        {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Priorité</label>
+                      <select style={s.select} value={form.priority || "Moyenne"} onChange={e => setForm({ ...form, priority: e.target.value })}>
+                        {PRIORITIES.map(p => <option key={p}>{p}</option>)}
+                      </select>
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={s.label}>Priorité</label>
-                    <select style={s.select} value={form.priority || "Moyenne"} onChange={e => setForm({ ...form, priority: e.target.value })}>
-                      {PRIORITIES.map(p => <option key={p}>{p}</option>)}
-                    </select>
-                  </div>
-                </div>
+                </>)}
 
                 {form.type === "📝 Note" && (<>
                   <label style={s.label}>Température (0-10)</label>
-                  <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" }}>
                     {TEMPS.map(t => (
-                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "6px 8px", fontSize: 16 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
+                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
                     ))}
                   </div>
                 </>)}

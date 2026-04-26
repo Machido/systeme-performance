@@ -839,7 +839,7 @@ export default function App() {
     select: { width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid #ddd", borderRadius: 8, color: "#222", fontFamily: "sans-serif", fontSize: 14, boxSizing: "border-box", outline: "none", marginBottom: 10 },
     label: { fontSize: 12, color: "#aaa", display: "block", marginBottom: 4 },
     modal: { position: "fixed", inset: 0, background: "#00000044", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 },
-    modalBox: { background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24, width: 440, maxHeight: "80vh", overflowY: "auto" },
+    modalBox: { background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 24, width: "min(440px, 95vw)", maxHeight: "90vh", overflowY: "auto" },
     row: { display: "flex", gap: 10 },
     tempBtn: (active) => ({ flex: 1, padding: "8px 4px", background: active ? "#f0eeff" : "#fafafa", border: active ? "1px solid #5b4ef8" : "1px solid #eee", borderRadius: 8, cursor: "pointer", fontSize: 18, transition: "all 0.1s" }),
     btnDanger: { padding: "8px 16px", borderRadius: 8, border: "1px solid #ffd0d0", background: "#fff5f5", color: "#E85555", cursor: "pointer", fontSize: 14, fontFamily: "sans-serif" },
@@ -2754,10 +2754,10 @@ export default function App() {
                 <label style={s.label}>Titre</label>
                 <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
 
-                <label style={s.label}>Description</label>
-                <textarea style={{ ...s.input, resize: "vertical", minHeight: 50 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
-
                 {!completionJournal && (<>
+                  <label style={s.label}>Description</label>
+                  <textarea style={{ ...s.input, resize: "vertical", minHeight: 50 }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} />
+                  
                   <label style={s.label}>Projet (optionnel)</label>
                   <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
                     <option value="">— Sans projet —</option>

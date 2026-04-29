@@ -1235,10 +1235,31 @@ export default function App() {
                             </div>
                           </div>
                         )}
+                        {/* Metric display */}
+                        {p.metric_label && (
+                          <div style={{ marginBottom: 6, padding: "8px 12px", background: "#f0f7ff", borderRadius: 6, border: "1px solid #d0e7ff" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: "#444" }}>📊 {p.metric_label}</span>
+                              {p.metric_final !== null && p.metric_final !== undefined && (
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "#5b4ef8" }}>
+                                  {Math.round(((p.metric_final - (p.metric_start || 0)) / ((p.metric_target || 1) - (p.metric_start || 0))) * 100)}% atteint
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+                              {p.metric_final !== null && p.metric_final !== undefined ? (
+                                <span>{p.metric_start || 0} → <strong>{p.metric_final}</strong> / {p.metric_target} {p.metric_unit}</span>
+                              ) : (
+                                <span>{p.metric_start || 0} → {p.metric_target} {p.metric_unit}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
                         <div style={{ display: "flex", gap: 8, fontSize: 11, color: "#aaa" }}>
                           {p.endDate && <span>📅 {p.endDate}</span>}
                           {p.estHours > 0 && <span>⏱ {p.estHours}h est.</span>}
-                          {p.notes && <span style={{ color: "#bbb" }}>- {p.notes}</span>}
+                          {p.notes && <span style={{ color: "#bbb" }}>— {p.notes}</span>}
                         </div>
 
                         {/* Expandable task section */}
@@ -2670,6 +2691,43 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Metric section */}
+                <div style={{ border: "1px solid #e8e8e8", borderRadius: 8, padding: 16, marginBottom: 16, background: "#fafafa" }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#444", marginBottom: 12 }}>📊 Métrique principale (optionnel)</div>
+
+                  <div style={s.row}>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Label</label>
+                      <input style={s.input} value={form.metric_label || ""} onChange={e => setForm({ ...form, metric_label: e.target.value })} placeholder="Ex: Poids, Articles fabriqués..." />
+                    </div>
+                    <div style={{ flex: 0, minWidth: 100 }}>
+                      <label style={s.label}>Unité</label>
+                      <input style={s.input} value={form.metric_unit || ""} onChange={e => setForm({ ...form, metric_unit: e.target.value })} placeholder="kg, €, #..." />
+                    </div>
+                  </div>
+
+                  <div style={s.row}>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Départ (start)</label>
+                      <input type="number" step="0.1" style={s.input} value={form.metric_start !== undefined ? form.metric_start : ""} onChange={e => setForm({ ...form, metric_start: e.target.value ? parseFloat(e.target.value) : null })} placeholder="0" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Objectif (target)</label>
+                      <input type="number" step="0.1" style={s.input} value={form.metric_target !== undefined ? form.metric_target : ""} onChange={e => setForm({ ...form, metric_target: e.target.value ? parseFloat(e.target.value) : null })} placeholder="10" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Final (terminé)</label>
+                      <input type="number" step="0.1" style={s.input} value={form.metric_final !== undefined ? form.metric_final : ""} onChange={e => setForm({ ...form, metric_final: e.target.value ? parseFloat(e.target.value) : null })} placeholder="8" disabled={form.status !== "Terminé"} />
+                    </div>
+                  </div>
+
+                  {form.metric_start !== null && form.metric_target !== null && form.metric_final !== null && (
+                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#fff", borderRadius: 6, fontSize: 13, color: "#666" }}>
+                      Progress: <strong>{Math.round(((form.metric_final - form.metric_start) / (form.metric_target - form.metric_start)) * 100)}%</strong> atteint
+                    </div>
+                  )}
+                </div>
+
                 <label style={s.label}>Notes</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Contexte, blocages, prochaines étapes..." />
 
@@ -2926,7 +2984,7 @@ export default function App() {
                 <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "#222", marginBottom: 8 }}>Note enregistrée !</div>
                 <div style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>Autre chose à capturer ?</div>
-                
+
                 <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16 }}>
                   <button
                     onClick={() => {
@@ -2961,7 +3019,7 @@ export default function App() {
                     🚧 Signaler un Obstacle
                   </button>
                 </div>
-                
+
                 <button
                   onClick={() => {
                     setJournalSaveSuccess(false);
@@ -2977,7 +3035,7 @@ export default function App() {
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                    ✅ Tâche terminée — Capturer une note ?
+                    ✅ Tâche terminée - Capturer une note ?
                   </div>
                   <button style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 20 }} onClick={() => { setCompletionJournal(null); setJournalSaveSuccess(false); }}>×</button>
                 </div>
@@ -2998,7 +3056,7 @@ export default function App() {
                   <label style={s.label}>Température (0-10)</label>
                   <div style={{ display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" }}>
                     {TEMPS.map(t => (
-                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} — ${t.label}`}>{t.emoji}</button>
+                      <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
                     ))}
                   </div>
                 </>)}

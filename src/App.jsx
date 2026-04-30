@@ -630,6 +630,20 @@ export default function App() {
   const todayTasks = tasks.filter(t => t.due === todayStr && t.status !== "Terminé" && t.status !== "Abandonné");
   const recentTemp = journal.slice(0, 3).map(j => getTempEmoji(j.temp)).join(" ");
 
+  // Helper to sort projects for dropdowns: Focus → En cours → Potentiel → Terminé → Abandonné
+  const getSortedProjects = () => {
+    const statusOrder = { "En cours": 1, "Potentiel": 2, "Terminé": 3, "Abandonné": 4 };
+    return projects
+      .filter(p => p.status !== "Abandonné" && p.status !== "Terminé") // Exclude completed/abandoned
+      .sort((a, b) => {
+        // Focus projects first
+        if (a.focus && !b.focus) return -1;
+        if (!a.focus && b.focus) return 1;
+        // Then by status
+        return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+      });
+  };
+
   const printFocusProjects = () => {
     const focusProjects = projects.filter(p => p.focus && p.status !== "Terminé" && p.status !== "Abandonné");
     if (focusProjects.length === 0) {
@@ -1255,11 +1269,11 @@ export default function App() {
                             </div>
                           </div>
                         )}
-                        
+
                         <div style={{ display: "flex", gap: 8, fontSize: 11, color: "#aaa" }}>
                           {p.endDate && <span>📅 {p.endDate}</span>}
                           {p.estHours > 0 && <span>⏱ {p.estHours}h est.</span>}
-                          {p.notes && <span style={{ color: "#bbb" }}>— {p.notes}</span>}
+                          {p.notes && <span style={{ color: "#bbb" }}>- {p.notes}</span>}
                         </div>
 
                         {/* Expandable task section */}
@@ -2563,8 +2577,10 @@ export default function App() {
                   setForm({ ...form, project: e.target.value, dept: proj ? proj.dept : form.dept });
                 }}>
                   <option value="">- Sans projet -</option>
-                  {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
-                    <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
+                  {getSortedProjects().map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.focus ? '\ud83d\udd25 ' : ''}{getDeptIcon(p.dept)} {p.name}
+                    </option>
                   ))}
                 </select>
 
@@ -2813,9 +2829,11 @@ export default function App() {
 
                   <label style={s.label}>Projet (optionnel)</label>
                   <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
-                    <option value="">- Sans projet -</option>
-                    {projects.filter(p => p.status !== "Abandonné" && p.status !== "Terminé").map(p => (
-                      <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>
+                    <option value="">— Sans projet —</option>
+                    {getSortedProjects().map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.focus ? '\ud83d\udd25 ' : ''}{getDeptIcon(p.dept)} {p.name}
+                      </option>
                     ))}
                   </select>
 

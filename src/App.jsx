@@ -166,6 +166,7 @@ export default function App() {
   const [veloDept, setVeloDept] = useState("all");
   const [veloProject, setVeloProject] = useState("all");
   const [veloPeriod, setVeloPeriod] = useState("daily");
+  const [veloDateRange, setVeloDateRange] = useState("30"); // "7", "14", "30", "all"
   const [satPeriod, setSatPeriod] = useState("daily");
   const [habitPeriod, setHabitPeriod] = useState("daily");
   const [timePeriod, setTimePeriod] = useState("daily");
@@ -1921,7 +1922,17 @@ export default function App() {
                   const doneDate = t.status === "Terminé" ? (t.completedDate || t.due || todayStr) : t.completedDate;
                   if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0 }; dateMap[doneDate].completed++; }
                 });
-                const veloDataRaw = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+                let veloDataRaw = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+                
+                // Filter by date range (only for "daily" period)
+                if (veloPeriod === "daily" && veloDateRange !== "all") {
+                  const daysBack = parseInt(veloDateRange);
+                  const cutoffDate = new Date();
+                  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+                  const cutoffStr = cutoffDate.toISOString().split('T')[0];
+                  veloDataRaw = veloDataRaw.filter(d => d.date >= cutoffStr);
+                }
+                
                 const veloData = aggregateByPeriod(veloDataRaw, veloPeriod, ["created", "completed"], "sum");
                 const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
                 const toggleStyle = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
@@ -1937,6 +1948,14 @@ export default function App() {
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
+                        {veloPeriod === "daily" && (
+                          <select value={veloDateRange} onChange={e => setVeloDateRange(e.target.value)} style={selectStyle}>
+                            <option value="7">7 derniers jours</option>
+                            <option value="14">14 derniers jours</option>
+                            <option value="30">30 derniers jours</option>
+                            <option value="all">Tout</option>
+                          </select>
+                        )}
                         <select value={veloDept} onChange={e => setVeloDept(e.target.value)} style={selectStyle}>
                           <option value="all">Tous départements</option>
                           {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}

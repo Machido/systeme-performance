@@ -168,7 +168,9 @@ export default function App() {
   const [veloPeriod, setVeloPeriod] = useState("daily");
   const [veloDateRange, setVeloDateRange] = useState("30"); // "7", "14", "30", "all"
   const [satPeriod, setSatPeriod] = useState("daily");
+  const [satDateRange, setSatDateRange] = useState("30"); // "7", "14", "30", "all"
   const [habitPeriod, setHabitPeriod] = useState("daily");
+  const [habitDateRange, setHabitDateRange] = useState("30"); // "7", "14", "30", "all"
   const [timePeriod, setTimePeriod] = useState("daily");
   const [deptTaskPeriod, setDeptTaskPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
@@ -1984,17 +1986,38 @@ export default function App() {
 
                   {/* Satisfaction trend - full width */}
                   {(() => {
-                    const satData = aggregateByPeriod(tempLine, satPeriod, ["temp"], "avg");
+                    let filteredTempLine = [...tempLine];
+                    
+                    // Filter by date range (only for "daily" period)
+                    if (satPeriod === "daily" && satDateRange !== "all") {
+                      const daysBack = parseInt(satDateRange);
+                      const cutoffDate = new Date();
+                      cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+                      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+                      filteredTempLine = filteredTempLine.filter(d => d.date >= cutoffStr);
+                    }
+                    
+                    const satData = aggregateByPeriod(filteredTempLine, satPeriod, ["temp"], "avg");
                     const toggleStyle2 = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
                     return (
                       <div style={{ ...chartCard, marginBottom: 16 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                          <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
-                          <div style={{ display: "flex", gap: 4 }}>
-                            {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
-                              <button key={k} style={toggleStyle2(satPeriod === k)} onClick={() => setSatPeriod(k)}>{l}</button>
-                            ))}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                                <button key={k} style={toggleStyle2(satPeriod === k)} onClick={() => setSatPeriod(k)}>{l}</button>
+                              ))}
+                            </div>
                           </div>
+                          {satPeriod === "daily" && (
+                            <select value={satDateRange} onChange={e => setSatDateRange(e.target.value)} style={selectStyle}>
+                              <option value="7">7 derniers jours</option>
+                              <option value="14">14 derniers jours</option>
+                              <option value="30">30 derniers jours</option>
+                              <option value="all">Tout</option>
+                            </select>
+                          )}
                         </div>
                         {satData.length < 1
                           ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas assez d'entrées journal pour afficher la tendance.</div>
@@ -2070,8 +2093,17 @@ export default function App() {
                       }
                     }
 
-                    const habitTrackingData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
+                    let habitTrackingData = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
                     if (!habitTrackingData.length) return null;
+
+                    // Filter by date range (only for "daily" period)
+                    if (habitPeriod === "daily" && habitDateRange !== "all") {
+                      const daysBack = parseInt(habitDateRange);
+                      const cutoffDate = new Date();
+                      cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+                      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+                      habitTrackingData = habitTrackingData.filter(d => d.date >= cutoffStr);
+                    }
 
                     // Aggregate habit data by period
                     const habitDataAggregated = habitTrackingData.length > 0
@@ -2080,13 +2112,23 @@ export default function App() {
 
                     return (
                       <div style={{ ...chartCard, marginBottom: 16 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                          <div style={chartTitle}>🎯 Suivi des habitudes</div>
-                          <div style={{ display: "flex", gap: 4 }}>
-                            {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
-                              <button key={k} style={toggleStyle(habitPeriod === k)} onClick={() => setHabitPeriod(k)}>{l}</button>
-                            ))}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={chartTitle}>🎯 Suivi des habitudes</div>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                                <button key={k} style={toggleStyle(habitPeriod === k)} onClick={() => setHabitPeriod(k)}>{l}</button>
+                              ))}
+                            </div>
                           </div>
+                          {habitPeriod === "daily" && (
+                            <select value={habitDateRange} onChange={e => setHabitDateRange(e.target.value)} style={selectStyle}>
+                              <option value="7">7 derniers jours</option>
+                              <option value="14">14 derniers jours</option>
+                              <option value="30">30 derniers jours</option>
+                              <option value="all">Tout</option>
+                            </select>
+                          )}
                         </div>
 
                         {/* Habit filter checkboxes */}

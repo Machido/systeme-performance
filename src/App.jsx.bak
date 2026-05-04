@@ -652,35 +652,9 @@ export default function App() {
   };
 
   const printVisibleProjects = () => {
-    // Apply same filters as the Projects view
-    let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
-    if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
-    
-    // Filter by status checkboxes (if ANY is checked, show only checked statuses; if NONE checked, show ALL)
-    const anyStatusChecked = projectShowPotentiel || projectShowEnCours || projectShowTermine || projectShowAbandonne;
-    if (anyStatusChecked) {
-      filtered = filtered.filter(p => {
-        if (p.status === "Potentiel" && projectShowPotentiel) return true;
-        if (p.status === "En cours" && projectShowEnCours) return true;
-        if (p.status === "Terminé" && projectShowTermine) return true;
-        if (p.status === "Abandonné" && projectShowAbandonne) return true;
-        return false;
-      });
-    }
-    
-    // Apply search filter
-    if (projectSearch.trim()) {
-      const q = projectSearch.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        (p.description || "").toLowerCase().includes(q) ||
-        (p.notes || "").toLowerCase().includes(q)
-      );
-    }
-    
-    const visibleProjects = filtered
-    if (visibleProjects.length === 0) {
-      alert("Aucun projet visible \ud83d\udd25 à imprimer.");
+    const focusProjects = projects.filter(p => p.focus && p.status !== "Terminé" && p.status !== "Abandonné");
+    if (focusProjects.length === 0) {
+      alert("Aucun projet en focus \ud83d\udd25 à imprimer.");
       return;
     }
 
@@ -694,7 +668,7 @@ export default function App() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Projets - Impression Vue</title>
+  <title>Projets Focus - Impression</title>
   <style>
     @media print {
       @page { margin: 1.5cm; }
@@ -767,30 +741,14 @@ export default function App() {
   </style>
 </head>
 <body>
-  <h1>PROJETS - VUE IMPRIMÉE \ud83d\udd25</h1>
+  <h1>PROJETS FOCUS \ud83d\udd25</h1>
   <div class="date">Imprimé le ${dateStr} à ${timeStr}</div>
 `;
 
-    visibleProjects.forEach(p => {
+    focusProjects.forEach(p => {
       const projectTasks = tasks.filter(t => t.project === p.id);
-      const activeTasks = projectTasks
-        .filter(t => t.status !== "Terminé" && t.status !== "Abandonné")
-        .sort((a, b) => {
-          // Sort by due date (earliest first, null dates last)
-          if (!a.due && !b.due) return 0;
-          if (!a.due) return 1;
-          if (!b.due) return -1;
-          return a.due.localeCompare(b.due);
-        });
-      const completedTasks = projectTasks
-        .filter(t => t.status === "Terminé" || t.status === "Abandonné")
-        .sort((a, b) => {
-          // Sort by due date (earliest first, null dates last)
-          if (!a.due && !b.due) return 0;
-          if (!a.due) return 1;
-          if (!b.due) return -1;
-          return a.due.localeCompare(b.due);
-        });
+      const activeTasks = projectTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
+      const completedTasks = projectTasks.filter(t => t.status === "Terminé" || t.status === "Abandonné");
 
       const totalEst = projectTasks.reduce((sum, t) => sum + (t.estH || 0), 0);
       const totalPassed = projectTasks.reduce((sum, t) => sum + (t.passedH || 0), 0);

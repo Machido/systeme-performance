@@ -184,6 +184,8 @@ export default function App() {
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
   const [projectShowEnCours, setProjectShowEnCours] = useState(false);
   const [projectShowPotentiel, setProjectShowPotentiel] = useState(false);
+  const [projectShowTermine, setProjectShowTermine] = useState(false);
+  const [projectShowAbandonne, setProjectShowAbandonne] = useState(false);
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [projectFocusOnly, setProjectFocusOnly] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
@@ -1137,12 +1139,20 @@ export default function App() {
                 🔥 Focus uniquement
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                <input type="checkbox" checked={projectShowPotentiel} onChange={e => setProjectShowPotentiel(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                Potentiel
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                 <input type="checkbox" checked={projectShowEnCours} onChange={e => setProjectShowEnCours(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
                 En cours
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
-                <input type="checkbox" checked={projectShowPotentiel} onChange={e => setProjectShowPotentiel(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
-                Potentiel
+                <input type="checkbox" checked={projectShowTermine} onChange={e => setProjectShowTermine(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                Terminé
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                <input type="checkbox" checked={projectShowAbandonne} onChange={e => setProjectShowAbandonne(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                Abandonné
               </label>
             </div>
             {PROJECT_STATUSES.map(ps => {
@@ -1153,12 +1163,17 @@ export default function App() {
               let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
               if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
               
-              // Filter by status checkboxes
-              filtered = filtered.filter(p => {
-                if (p.status === "En cours" && !projectShowEnCours) return false;
-                if (p.status === "Potentiel" && !projectShowPotentiel) return false;
-                return true;
-              });
+              // Filter by status checkboxes (if ANY is checked, show only checked statuses; if NONE checked, show ALL)
+              const anyStatusChecked = projectShowPotentiel || projectShowEnCours || projectShowTermine || projectShowAbandonne;
+              if (anyStatusChecked) {
+                filtered = filtered.filter(p => {
+                  if (p.status === "Potentiel" && projectShowPotentiel) return true;
+                  if (p.status === "En cours" && projectShowEnCours) return true;
+                  if (p.status === "Termin\u00e9" && projectShowTermine) return true;
+                  if (p.status === "Abandonn\u00e9" && projectShowAbandonne) return true;
+                  return false;
+                });
+              }
               if (projectSearch.trim()) {
                 const q = projectSearch.toLowerCase();
                 filtered = filtered.filter(p =>

@@ -182,6 +182,8 @@ export default function App() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
+  const [projectShowEnCours, setProjectShowEnCours] = useState(true);
+  const [projectShowPotentiel, setProjectShowPotentiel] = useState(true);
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [projectFocusOnly, setProjectFocusOnly] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
@@ -1134,14 +1136,29 @@ export default function App() {
                 <input type="checkbox" checked={projectFocusOnly} onChange={e => setProjectFocusOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
                 🔥 Focus uniquement
               </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                <input type="checkbox" checked={projectShowEnCours} onChange={e => setProjectShowEnCours(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                En cours
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                <input type="checkbox" checked={projectShowPotentiel} onChange={e => setProjectShowPotentiel(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                Potentiel
+              </label>
             </div>
             {PROJECT_STATUSES.map(ps => {
               // Apply status filter
               if (projectStatusFilter !== "all" && ps !== projectStatusFilter) return null;
 
-              // Apply department, focus, and search filters
+              // Apply department, focus, status checkboxes, and search filters
               let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
               if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
+              
+              // Filter by status checkboxes
+              filtered = filtered.filter(p => {
+                if (p.status === "En cours" && !projectShowEnCours) return false;
+                if (p.status === "Potentiel" && !projectShowPotentiel) return false;
+                return true;
+              });
               if (projectSearch.trim()) {
                 const q = projectSearch.toLowerCase();
                 filtered = filtered.filter(p =>

@@ -182,8 +182,8 @@ export default function App() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
-  const [projectShowEnCours, setProjectShowEnCours] = useState(true);
-  const [projectShowPotentiel, setProjectShowPotentiel] = useState(true);
+  const [projectShowEnCours, setProjectShowEnCours] = useState(false);
+  const [projectShowPotentiel, setProjectShowPotentiel] = useState(false);
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [projectFocusOnly, setProjectFocusOnly] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");

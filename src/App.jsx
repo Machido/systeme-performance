@@ -233,6 +233,27 @@ export default function App() {
     load();
   }, []);
 
+  // Auto-open task from URL (?openTask=T123...)
+  useEffect(() => {
+    if (!storageReady || tasks.length === 0) return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskId = urlParams.get('openTask');
+    
+    if (taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        // Set modal state directly
+        setShowModal('task');
+        setForm({ ...task });
+        // Clean URL without reloading
+        window.history.replaceState({}, '', window.location.pathname);
+      } else {
+        console.warn(`Task ${taskId} not found`);
+      }
+    }
+  }, [storageReady, tasks]);
+
   // ── SYNC helpers ──
   const syncRecord = async (table, record) => {
     try {

@@ -186,6 +186,7 @@ export default function App() {
   const [projectShowPotentiel, setProjectShowPotentiel] = useState(false);
   const [projectShowTermine, setProjectShowTermine] = useState(false);
   const [projectShowAbandonne, setProjectShowAbandonne] = useState(false);
+  const [projectGroupBy, setProjectGroupBy] = useState("status"); // "status", "department", "none"
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [projectFocusOnly, setProjectFocusOnly] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
@@ -1253,6 +1254,14 @@ export default function App() {
                 <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectDeptFilter} onChange={e => setProjectDeptFilter(e.target.value)}>
                   <option value="all">Tous les départements</option>
                   {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Grouper par</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectGroupBy} onChange={e => setProjectGroupBy(e.target.value)}>
+                  <option value="status">Par statut</option>
+                  <option value="department">Par département</option>
+                  <option value="none">Sans groupement</option>
                 </select>
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
@@ -2904,6 +2913,12 @@ export default function App() {
                     <label style={s.label}>Date de fin cible</label>
                     <input type="date" style={s.input} value={form.endDate || ""} onChange={e => setForm({ ...form, endDate: e.target.value })} />
                   </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={s.label}>Date de complétion actuelle</label>
+                  <input type="date" style={s.input} value={form.completedDate || ""} onChange={e => setForm({ ...form, completedDate: e.target.value })} />
+                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Remplir quand le projet est terminé</div>
                 </div>
 
                 <div style={s.row}>

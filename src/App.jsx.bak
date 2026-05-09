@@ -186,6 +186,7 @@ export default function App() {
   const [projectShowPotentiel, setProjectShowPotentiel] = useState(false);
   const [projectShowTermine, setProjectShowTermine] = useState(false);
   const [projectShowAbandonne, setProjectShowAbandonne] = useState(false);
+  const [projectGroupBy, setProjectGroupBy] = useState("status"); // "status", "department", "none"
   const [projectDeptFilter, setProjectDeptFilter] = useState("all");
   const [projectFocusOnly, setProjectFocusOnly] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
@@ -232,6 +233,48 @@ export default function App() {
     };
     load();
   }, []);
+
+  // Auto-open task from URL (?openTask=T123...)
+  useEffect(() => {
+    if (!storageReady || tasks.length === 0) return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskId = urlParams.get('openTask');
+    
+    if (taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        // Set modal state directly
+        setShowModal('task');
+        setForm({ ...task });
+        // Clean URL without reloading
+        window.history.replaceState({}, '', window.location.pathname);
+      } else {
+        console.warn(`Task ${taskId} not found`);
+      }
+    }
+  }, [storageReady, tasks]);
+
+  // Auto-open project from URL (?openProject=P123...)
+  useEffect(() => {
+    if (!storageReady || projects.length === 0) return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('openProject');
+    
+    if (projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        // Set modal state directly
+        setShowModal('project');
+        setForm({ ...project });
+        // Clean URL without reloading
+        window.history.replaceState({}, '', window.location.pathname);
+      } else {
+        console.warn(`Project ${projectId} not found`);
+      }
+    }
+  }, [storageReady, projects]);
 
   // ── SYNC helpers ──
   const syncRecord = async (table, record) => {
@@ -640,21 +683,84 @@ export default function App() {
   // Helper to sort projects for dropdowns: Focus → En cours → Potentiel → Terminé → Abandonné
   const getSortedProjects = () => {
     const statusOrder = { "En cours": 1, "Potentiel": 2, "Terminé": 3, "Abandonné": 4 };
+    const deptOrder = { "ops": 1, "sales": 2, "prod": 3, "res": 4 };
     return projects
       .filter(p => p.status !== "Abandonné" && p.status !== "Terminé") // Exclude completed/abandoned
       .sort((a, b) => {
-        // Focus projects first
+        // First: Sort by department
+        const deptDiff = (deptOrder[a.dept] || 99) - (deptOrder[b.dept] || 99);
+        if (deptDiff !== 0) return deptDiff;
+        
+        // Within same department: Focus projects first
         if (a.focus && !b.focus) return -1;
         if (!a.focus && b.focus) return 1;
+        
         // Then by status
         return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
       });
   };
 
+  // Generate project options with department separators
+  const getProjectOptionsWithSeparators = () => {
+    const sorted = getSortedProjects();
+    const options = [];
+    let lastDept = null;
+    
+    sorted.forEach(p => {
+      // Add separator when department changes
+      if (p.dept !== lastDept) {
+        const deptInfo = DEPTS.find(d => d.id === p.dept);
+        if (deptInfo) {
+          options.push(
+            <option key={`sep-${p.dept}`} disabled style={{ fontWeight: 'bold', background: '#f5f5f5' }}>
+              ─ {deptInfo.icon} {deptInfo.label} ─
+            </option>
+          );
+        }
+        lastDept = p.dept;
+      }
+      
+      // Add project option
+      options.push(
+        <option key={p.id} value={p.id}>
+          {p.focus ? '🔥 ' : ''}{p.name}
+        </option>
+      );
+    });
+    
+    return options;
+  };
+
   const printVisibleProjects = () => {
-    const focusProjects = projects.filter(p => p.focus && p.status !== "Terminé" && p.status !== "Abandonné");
-    if (focusProjects.length === 0) {
-      alert("Aucun projet en focus \ud83d\udd25 à imprimer.");
+    // Apply same filters as the Projects view
+    let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
+    if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
+    
+    // Filter by status checkboxes (if ANY is checked, show only checked statuses; if NONE checked, show ALL)
+    const anyStatusChecked = projectShowPotentiel || projectShowEnCours || projectShowTermine || projectShowAbandonne;
+    if (anyStatusChecked) {
+      filtered = filtered.filter(p => {
+        if (p.status === "Potentiel" && projectShowPotentiel) return true;
+        if (p.status === "En cours" && projectShowEnCours) return true;
+        if (p.status === "Terminé" && projectShowTermine) return true;
+        if (p.status === "Abandonné" && projectShowAbandonne) return true;
+        return false;
+      });
+    }
+    
+    // Apply search filter
+    if (projectSearch.trim()) {
+      const q = projectSearch.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q) ||
+        (p.notes || "").toLowerCase().includes(q)
+      );
+    }
+    
+    const visibleProjects = filtered
+    if (visibleProjects.length === 0) {
+      alert("Aucun projet visible \ud83d\udd25 à imprimer.");
       return;
     }
 
@@ -668,7 +774,7 @@ export default function App() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Projets Focus - Impression</title>
+  <title>Projets - Impression Vue</title>
   <style>
     @media print {
       @page { margin: 1.5cm; }
@@ -741,14 +847,30 @@ export default function App() {
   </style>
 </head>
 <body>
-  <h1>PROJETS FOCUS \ud83d\udd25</h1>
+  <h1>PROJETS - VUE IMPRIMÉE \ud83d\udd25</h1>
   <div class="date">Imprimé le ${dateStr} à ${timeStr}</div>
 `;
 
-    focusProjects.forEach(p => {
+    visibleProjects.forEach(p => {
       const projectTasks = tasks.filter(t => t.project === p.id);
-      const activeTasks = projectTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
-      const completedTasks = projectTasks.filter(t => t.status === "Terminé" || t.status === "Abandonné");
+      const activeTasks = projectTasks
+        .filter(t => t.status !== "Terminé" && t.status !== "Abandonné")
+        .sort((a, b) => {
+          // Sort by due date (earliest first, null dates last)
+          if (!a.due && !b.due) return 0;
+          if (!a.due) return 1;
+          if (!b.due) return -1;
+          return a.due.localeCompare(b.due);
+        });
+      const completedTasks = projectTasks
+        .filter(t => t.status === "Terminé" || t.status === "Abandonné")
+        .sort((a, b) => {
+          // Sort by due date (earliest first, null dates last)
+          if (!a.due && !b.due) return 0;
+          if (!a.due) return 1;
+          if (!b.due) return -1;
+          return a.due.localeCompare(b.due);
+        });
 
       const totalEst = projectTasks.reduce((sum, t) => sum + (t.estH || 0), 0);
       const totalPassed = projectTasks.reduce((sum, t) => sum + (t.passedH || 0), 0);
@@ -1132,6 +1254,14 @@ export default function App() {
                 <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectDeptFilter} onChange={e => setProjectDeptFilter(e.target.value)}>
                   <option value="all">Tous les départements</option>
                   {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={s.label}>Grouper par</label>
+                <select style={{ ...s.select, marginBottom: 0, minWidth: 150 }} value={projectGroupBy} onChange={e => setProjectGroupBy(e.target.value)}>
+                  <option value="status">Par statut</option>
+                  <option value="department">Par département</option>
+                  <option value="none">Sans groupement</option>
                 </select>
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
@@ -2670,11 +2800,7 @@ export default function App() {
                   setForm({ ...form, project: e.target.value, dept: proj ? proj.dept : form.dept });
                 }}>
                   <option value="">- Sans projet -</option>
-                  {getSortedProjects().map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.focus ? '\ud83d\udd25 ' : ''}{getDeptIcon(p.dept)} {p.name}
-                    </option>
-                  ))}
+                  {getProjectOptionsWithSeparators()}
                 </select>
 
                 <div style={s.row}>
@@ -2923,11 +3049,7 @@ export default function App() {
                   <label style={s.label}>Projet (optionnel)</label>
                   <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
                     <option value="">— Sans projet —</option>
-                    {getSortedProjects().map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.focus ? '\ud83d\udd25 ' : ''}{getDeptIcon(p.dept)} {p.name}
-                      </option>
-                    ))}
+                    {getProjectOptionsWithSeparators()}
                   </select>
 
                   <div style={s.row}>

@@ -661,12 +661,18 @@ export default function App() {
   // Helper to sort projects for dropdowns: Focus → En cours → Potentiel → Terminé → Abandonné
   const getSortedProjects = () => {
     const statusOrder = { "En cours": 1, "Potentiel": 2, "Terminé": 3, "Abandonné": 4 };
+    const deptOrder = { "ops": 1, "sales": 2, "prod": 3, "res": 4 };
     return projects
       .filter(p => p.status !== "Abandonné" && p.status !== "Terminé") // Exclude completed/abandoned
       .sort((a, b) => {
-        // Focus projects first
+        // First: Sort by department
+        const deptDiff = (deptOrder[a.dept] || 99) - (deptOrder[b.dept] || 99);
+        if (deptDiff !== 0) return deptDiff;
+        
+        // Within same department: Focus projects first
         if (a.focus && !b.focus) return -1;
         if (!a.focus && b.focus) return 1;
+        
         // Then by status
         return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
       });

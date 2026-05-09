@@ -254,6 +254,27 @@ export default function App() {
     }
   }, [storageReady, tasks]);
 
+  // Auto-open project from URL (?openProject=P123...)
+  useEffect(() => {
+    if (!storageReady || projects.length === 0) return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('openProject');
+    
+    if (projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        // Set modal state directly
+        setShowModal('project');
+        setForm({ ...project });
+        // Clean URL without reloading
+        window.history.replaceState({}, '', window.location.pathname);
+      } else {
+        console.warn(`Project ${projectId} not found`);
+      }
+    }
+  }, [storageReady, projects]);
+
   // ── SYNC helpers ──
   const syncRecord = async (table, record) => {
     try {

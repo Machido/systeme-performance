@@ -678,6 +678,37 @@ export default function App() {
       });
   };
 
+  // Generate project options with department separators
+  const getProjectOptionsWithSeparators = () => {
+    const sorted = getSortedProjects();
+    const options = [];
+    let lastDept = null;
+    
+    sorted.forEach(p => {
+      // Add separator when department changes
+      if (p.dept !== lastDept) {
+        const deptInfo = DEPTS.find(d => d.id === p.dept);
+        if (deptInfo) {
+          options.push(
+            <option key={`sep-${p.dept}`} disabled style={{ fontWeight: 'bold', background: '#f5f5f5' }}>
+              ─ {deptInfo.icon} {deptInfo.label} ─
+            </option>
+          );
+        }
+        lastDept = p.dept;
+      }
+      
+      // Add project option
+      options.push(
+        <option key={p.id} value={p.id}>
+          {p.focus ? '🔥 ' : ''}{p.name}
+        </option>
+      );
+    });
+    
+    return options;
+  };
+
   const printVisibleProjects = () => {
     // Apply same filters as the Projects view
     let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
@@ -2739,11 +2770,7 @@ export default function App() {
                   setForm({ ...form, project: e.target.value, dept: proj ? proj.dept : form.dept });
                 }}>
                   <option value="">- Sans projet -</option>
-                  {getSortedProjects().map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.focus ? '\ud83d\udd25 ' : ''}{getDeptIcon(p.dept)} {p.name}
-                    </option>
-                  ))}
+                  {getProjectOptionsWithSeparators()}
                 </select>
 
                 <div style={s.row}>
@@ -2992,11 +3019,7 @@ export default function App() {
                   <label style={s.label}>Projet (optionnel)</label>
                   <select style={s.select} value={form.project || ""} onChange={e => setForm({ ...form, project: e.target.value })}>
                     <option value="">— Sans projet —</option>
-                    {getSortedProjects().map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.focus ? '\ud83d\udd25 ' : ''}{getDeptIcon(p.dept)} {p.name}
-                      </option>
-                    ))}
+                    {getProjectOptionsWithSeparators()}
                   </select>
 
                   <div style={s.row}>

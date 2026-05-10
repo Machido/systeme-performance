@@ -170,7 +170,12 @@ export default function App() {
   const [satPeriod, setSatPeriod] = useState("daily");
   const [satDateRange, setSatDateRange] = useState("30"); // "7", "14", "30", "all"
   const [habitPeriod, setHabitPeriod] = useState("daily");
-  const [habitDateRange, setHabitDateRange] = useState("30"); // "7", "14", "30", "all"
+  const [habitDateRange, setHabitDateRange] = useState("30");
+  const [projectCreatedPeriod, setProjectCreatedPeriod] = useState("monthly");
+  const [projectCreatedDept, setProjectCreatedDept] = useState("all");
+  const [projectCreatedStatus, setProjectCreatedStatus] = useState("all");
+  const [projectPieDept, setProjectPieDept] = useState("all");
+  const [projectPieStatus, setProjectPieStatus] = useState("all"); // "7", "14", "30", "all"
   const [timePeriod, setTimePeriod] = useState("daily");
   const [deptTaskPeriod, setDeptTaskPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
@@ -2433,6 +2438,141 @@ export default function App() {
                   </div>
                 );
               })()}
+
+              {/* Projects created over time */}
+              {(() => {
+                // Filter projects
+                let filteredProjects = projects;
+                if (projectCreatedDept !== "all") filteredProjects = filteredProjects.filter(p => p.dept === projectCreatedDept);
+                if (projectCreatedStatus !== "all") filteredProjects = filteredProjects.filter(p => p.status === projectCreatedStatus);
+                
+                // Build date map (use startDate or fallback to today for old projects without startDate)
+                const dateMap = {};
+                filteredProjects.forEach(p => {
+                  const createdDate = p.startDate || todayStr; // Fallback if no startDate
+                  if (createdDate) {
+                    dateMap[createdDate] = dateMap[createdDate] || { date: createdDate, created: 0 };
+                    dateMap[createdDate].created++;
+                  }
+                });
+                
+                const projectDataRaw = Object.values(dateMap)
+                  .filter(d => d.date <= todayStr)
+                  .sort((a, b) => a.date.localeCompare(b.date));
+                
+                const projectData = aggregateByPeriod(projectDataRaw, projectCreatedPeriod, ["created"], "sum");
+                
+                return (
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={chartTitle}>📈 Projets créés au fil du temps</div>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                            <button key={k} style={toggleStyle(projectCreatedPeriod === k)} onClick={() => setProjectCreatedPeriod(k)}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <select value={projectCreatedDept} onChange={e => setProjectCreatedDept(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous départements</option>
+                          {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                        </select>
+                        <select value={projectCreatedStatus} onChange={e => setProjectCreatedStatus(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous statuts</option>
+                          {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    {projectData.length < 1
+                      ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas de projets à afficher.</div>
+                      : <ResponsiveContainer width="100%" height={220}>
+                        <LineChart data={projectData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} tickFormatter={d => d.length > 7 ? d.slice(5) : d} />
+                          <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          <Line type="monotone" dataKey="created" name="Projets créés" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    }
+                  </div>
+                );
+              })()}
+
+              {/* Project pie charts: by status and by department */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                
+                {/* Pie: projects by status */}
+                {(() => {
+                  let filtered = projectPieDept === "all" ? projects : projects.filter(p => p.dept === projectPieDept);
+                  
+                  const pieByStatus = PROJECT_STATUSES.map(status => ({
+                    name: status,
+                    value: filtered.filter(p => p.status === status).length,
+                    color: PROJECT_STATUS_COLOR[status],
+                  })).filter(d => d.value > 0);
+                  
+                  return (
+                    <div style={chartCard}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                        <div style={chartTitle}>Projets par statut</div>
+                        <select value={projectPieDept} onChange={e => setProjectPieDept(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous depts</option>
+                          {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                        </select>
+                      </div>
+                      {pieByStatus.length === 0
+                        ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Aucun projet</div>
+                        : <ResponsiveContainer width="100%" height={200}>
+                          <PieChart>
+                            <Pie data={pieByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => `${entry.name} (${entry.value})`}>
+                              {pieByStatus.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      }
+                    </div>
+                  );
+                })()}
+                
+                {/* Pie: projects by department */}
+                {(() => {
+                  let filtered = projectPieStatus === "all" ? projects : projects.filter(p => p.status === projectPieStatus);
+                  
+                  const pieByDept = DEPTS.map(dept => ({
+                    name: `${dept.icon} ${dept.label}`,
+                    value: filtered.filter(p => p.dept === dept.id).length,
+                    color: dept.color,
+                  })).filter(d => d.value > 0);
+                  
+                  return (
+                    <div style={chartCard}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                        <div style={chartTitle}>Projets par département</div>
+                        <select value={projectPieStatus} onChange={e => setProjectPieStatus(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous statuts</option>
+                          {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      {pieByDept.length === 0
+                        ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Aucun projet</div>
+                        : <ResponsiveContainer width="100%" height={200}>
+                          <PieChart>
+                            <Pie data={pieByDept} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => `${entry.name} (${entry.value})`}>
+                              {pieByDept.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      }
+                    </div>
+                  );
+                })()}
+                
+              </div>
 
               {/* Row 1: Dial + Pie + System state */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 0 }}>

@@ -149,12 +149,43 @@ const formatTodayLabel = () => {
 };
 
 const getDeptColor = (deptId) => DEPTS.find(d => d.id === deptId)?.color || "#888";
+
+// Calculate milestone completion
+const isMilestoneComplete = (milestone) => {
+  if (milestone.current_value === null || milestone.current_value === undefined) return false;
+  
+  // For currency: complete if current <= target (budget respected)
+  if (milestone.type === 'currency') {
+    return milestone.current_value <= milestone.target_value;
+  }
+  
+  // For count/metric: complete if current >= target
+  return milestone.current_value >= milestone.target_value;
+};
+
+const getProjectMilestones = (projectId, milestones) => {
+  return milestones.filter(m => m.project_id === projectId).sort((a, b) => {
+    // Sort by target_date first (if both have it), then by order_index
+    if (a.target_date && b.target_date) return a.target_date.localeCompare(b.target_date);
+    if (a.target_date && !b.target_date) return -1;
+    if (!a.target_date && b.target_date) return 1;
+    return a.order_index - b.order_index;
+  });
+};
+
+const getProjectProgress = (projectId, milestones) => {
+  const pms = getProjectMilestones(projectId, milestones);
+  if (pms.length === 0) return null;
+  const completed = pms.filter(isMilestoneComplete).length;
+  return Math.round((completed / pms.length) * 100);
+};
 const getDeptIcon = (deptId) => DEPTS.find(d => d.id === deptId)?.icon || "";
 const getTempEmoji = (score) => TEMPS.find(t => t.score === score)?.emoji || "🙂";
 
 export default function App() {
   const [tab, setTab] = useState("kanban");
   const [projects, setProjects] = useState(initialProjects);
+  const [projectMilestones, setProjectMilestones] = useState([]);
   const [tasks, setTasks] = useState(initialTasks);
   const [journal, setJournal] = useState(initialJournal);
   const [deptFilter, setDeptFilter] = useState("all");
@@ -221,18 +252,20 @@ export default function App() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [{ data: p }, { data: t }, { data: j }, { data: h }, { data: hl }] = await Promise.all([
+        const [{ data: p }, { data: t }, { data: j }, { data: h }, { data: hl }, { data: pm }] = await Promise.all([
           supabase.from("projects").select("*"),
           supabase.from("tasks").select("*"),
           supabase.from("journal").select("*"),
           supabase.from("habits").select("*"),
           supabase.from("habit_logs").select("*"),
+          supabase.from("project_milestones").select("*").order("order_index", { ascending: true }),
         ]);
         if (p?.length) setProjects(p);
         if (t?.length) setTasks(t);
         if (j?.length) setJournal(j);
         if (h?.length) setHabits(h);
         if (hl?.length) setHabitLogs(hl);
+        if (pm?.length) setProjectMilestones(pm);
       } catch (e) {}
       setStorageReady(true);
     };
@@ -2363,30 +2396,28 @@ export default function App() {
                 </>);
               })()}
 
-              {/* Project metrics progress */}
+              {/* Project milestones progress */}
               {(() => {
-                // Get projects with metrics (metric_label exists)
-                const projectsWithMetrics = projects.filter(p => p.metric_label && p.metric_target);
+                // Get projects with milestones
+                const projectsWithMilestones = projects.filter(p => {
+                  const pms = getProjectMilestones(p.id, projectMilestones);
+                  return pms.length > 0;
+                });
                 
-                if (projectsWithMetrics.length === 0) return null;
+                if (projectsWithMilestones.length === 0) return null;
                 
                 // Calculate progress for each project
-                const projectProgress = projectsWithMetrics.map(p => {
-                  const start = p.metric_start || 0;
-                  const target = p.metric_target || 1;
-                  const current = p.metric_final !== null && p.metric_final !== undefined ? p.metric_final : start;
-                  const range = target - start;
-                  const progress = range !== 0 ? ((current - start) / range) * 100 : 0;
-                  const progressClamped = Math.max(0, Math.min(100, Math.round(progress)));
+                const projectProgress = projectsWithMilestones.map(p => {
+                  const pms = getProjectMilestones(p.id, projectMilestones);
+                  const completed = pms.filter(isMilestoneComplete).length;
+                  const progress = Math.round((completed / pms.length) * 100);
                   
                   return {
+                    id: p.id,
                     name: p.name,
-                    label: p.metric_label,
-                    unit: p.metric_unit || "",
-                    start,
-                    current,
-                    target,
-                    progress: progressClamped,
+                    total: pms.length,
+                    completed,
+                    progress,
                     color: getDeptColor(p.dept),
                     dept: DEPTS.find(d => d.id === p.dept),
                   };
@@ -2394,17 +2425,17 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>📊 Progression des projets (métriques)</div>
+                    <div style={chartTitle}>🎯 Progression des projets (milestones)</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      {projectProgress.map((p, idx) => (
-                        <div key={idx} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          {/* Project name + metric label */}
+                      {projectProgress.map((p) => (
+                        <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          {/* Project name */}
                           <div style={{ minWidth: 200, maxWidth: 200 }}>
                             <div style={{ fontSize: 12, fontWeight: 600, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {p.dept && <span style={{ marginRight: 4 }}>{p.dept.icon}</span>}
                               {p.name}
                             </div>
-                            <div style={{ fontSize: 10, color: "#888" }}>{p.label}</div>
+                            <div style={{ fontSize: 10, color: "#888" }}>{p.completed}/{p.total} milestones</div>
                           </div>
                           
                           {/* Progress bar */}
@@ -2419,12 +2450,6 @@ export default function App() {
                                   transition: "width 0.3s ease" 
                                 }} 
                               />
-                              {/* Text inside bar */}
-                              <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: p.progress > 50 ? "#fff" : "#666", textShadow: p.progress > 50 ? "0 1px 2px rgba(0,0,0,0.2)" : "none" }}>
-                                  {p.current} / {p.target} {p.unit}
-                                </span>
-                              </div>
                             </div>
                           </div>
                           
@@ -3181,6 +3206,236 @@ export default function App() {
                   {form.metric_start !== null && form.metric_target !== null && form.metric_final !== null && (
                     <div style={{ marginTop: 8, padding: "8px 12px", background: "#fff", borderRadius: 6, fontSize: 13, color: "#666" }}>
                       Progress: <strong>{Math.round(((form.metric_final - form.metric_start) / (form.metric_target - form.metric_start)) * 100)}%</strong> atteint
+                    </div>
+                  )}
+                </div>
+
+                {/* Milestones section */}
+                <div style={{ border: "1px solid #e8e8e8", borderRadius: 8, padding: 16, marginBottom: 16, background: "#fafafa" }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#444", marginBottom: 12 }}>🎯 Milestones du projet {form.id && `(${getProjectMilestones(form.id, projectMilestones).filter(isMilestoneComplete).length}/${getProjectMilestones(form.id, projectMilestones).length})`}</div>
+                  
+                  {form.id && getProjectMilestones(form.id, projectMilestones).length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                      {getProjectMilestones(form.id, projectMilestones).map((m, idx) => {
+                        const isComplete = isMilestoneComplete(m);
+                        const icon = isComplete ? "✅" : (m.current_value !== null && m.current_value !== undefined ? "⚠️" : "⏳");
+                        const progress = m.type === 'currency' 
+                          ? (m.current_value !== null ? Math.round((m.current_value / m.target_value) * 100) : 0)
+                          : (m.current_value !== null ? Math.round(((m.current_value - m.start_value) / (m.target_value - m.start_value)) * 100) : 0);
+                        
+                        return (
+                          <div key={m.id} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, padding: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: "#333" }}>
+                                  {icon} {m.label}
+                                </div>
+                                <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                                  {m.type === 'count' && `${m.current_value !== null ? m.current_value : m.start_value}/${m.target_value}`}
+                                  {m.type === 'currency' && `${m.current_value !== null ? m.current_value : m.start_value}${m.unit}/${m.target_value}${m.unit}`}
+                                  {m.type === 'metric' && `${m.current_value !== null ? m.current_value : m.start_value} → ${m.target_value} ${m.unit}`}
+                                  {m.target_date && ` ● Cible: ${m.target_date}`}
+                                  {m.completed_date && ` ✓ ${m.completed_date}`}
+                                </div>
+                              </div>
+                              <div style={{ display: "flex", gap: 4 }}>
+                                <button 
+                                  style={{ ...s.btn("ghost"), padding: "2px 6px", fontSize: 11 }} 
+                                  onClick={() => {
+                                    setForm({ ...form, _editingMilestone: m });
+                                  }}
+                                >
+                                  ✏️
+                                </button>
+                                <button 
+                                  style={{ ...s.btn("ghost"), padding: "2px 6px", fontSize: 11, color: "#E85555" }} 
+                                  onClick={async () => {
+                                    if (window.confirm(`Supprimer le milestone "${m.label}" ?`)) {
+                                      await supabase.from("project_milestones").delete().eq("id", m.id);
+                                      setProjectMilestones(projectMilestones.filter(pm => pm.id !== m.id));
+                                    }
+                                  }}
+                                >
+                                  🗑
+                                </button>
+                              </div>
+                            </div>
+                            <div style={{ background: "#f0f0f0", borderRadius: 4, height: 6, marginTop: 6 }}>
+                              <div style={{ width: `${Math.max(0, Math.min(100, progress))}%`, height: "100%", background: isComplete ? "#6BBF6B" : "#5b4ef8", borderRadius: 4, transition: "width 0.3s" }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: "center", color: "#aaa", fontSize: 12, padding: "20px 0" }}>
+                      {form.id ? "Aucun milestone pour ce projet" : "Enregistrez d'abord le projet pour ajouter des milestones"}
+                    </div>
+                  )}
+                  
+                  {form.id && (
+                    <button 
+                      style={{ ...s.btn("primary"), width: "100%" }} 
+                      onClick={() => {
+                        setForm({ 
+                          ...form, 
+                          _editingMilestone: { 
+                            id: null, 
+                            project_id: form.id, 
+                            label: "", 
+                            type: "count", 
+                            unit: "", 
+                            start_value: 0, 
+                            target_value: 1, 
+                            current_value: null,
+                            target_date: "",
+                            completed_date: "",
+                            order_index: getProjectMilestones(form.id, projectMilestones).length
+                          } 
+                        });
+                      }}
+                    >
+                      + Ajouter un milestone
+                    </button>
+                  )}
+                  
+                  {form._editingMilestone && (
+                    <div style={{ marginTop: 16, padding: 12, background: "#fff", border: "2px solid #5b4ef8", borderRadius: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+                        {form._editingMilestone.id ? "✏️ Modifier milestone" : "➕ Nouveau milestone"}
+                      </div>
+                      
+                      <label style={{ ...s.label, marginBottom: 4 }}>Label</label>
+                      <input 
+                        style={{ ...s.input, marginBottom: 10 }} 
+                        value={form._editingMilestone.label} 
+                        onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, label: e.target.value } })} 
+                        placeholder="Ex: Design plan créé" 
+                      />
+                      
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+                        <div>
+                          <label style={{ ...s.label, marginBottom: 4 }}>Type</label>
+                          <select 
+                            style={s.select} 
+                            value={form._editingMilestone.type} 
+                            onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, type: e.target.value } })}
+                          >
+                            <option value="count">Count (#)</option>
+                            <option value="currency">Currency (€)</option>
+                            <option value="metric">Metric (kg, h...)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ ...s.label, marginBottom: 4 }}>Unité</label>
+                          <input 
+                            style={s.input} 
+                            value={form._editingMilestone.unit} 
+                            onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, unit: e.target.value } })} 
+                            placeholder="€, kg, h..." 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+                        <div>
+                          <label style={{ ...s.label, marginBottom: 4 }}>Start</label>
+                          <input 
+                            type="number" 
+                            step="0.1" 
+                            style={s.input} 
+                            value={form._editingMilestone.start_value} 
+                            onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, start_value: parseFloat(e.target.value) || 0 } })} 
+                          />
+                        </div>
+                        <div>
+                          <label style={{ ...s.label, marginBottom: 4 }}>Target</label>
+                          <input 
+                            type="number" 
+                            step="0.1" 
+                            style={s.input} 
+                            value={form._editingMilestone.target_value} 
+                            onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, target_value: parseFloat(e.target.value) || 1 } })} 
+                          />
+                        </div>
+                        <div>
+                          <label style={{ ...s.label, marginBottom: 4 }}>Current</label>
+                          <input 
+                            type="number" 
+                            step="0.1" 
+                            style={s.input} 
+                            value={form._editingMilestone.current_value !== null ? form._editingMilestone.current_value : ""} 
+                            onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, current_value: e.target.value ? parseFloat(e.target.value) : null } })} 
+                            placeholder="-" 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+                        <div>
+                          <label style={{ ...s.label, marginBottom: 4 }}>Date cible</label>
+                          <input 
+                            type="date" 
+                            style={s.input} 
+                            value={form._editingMilestone.target_date || ""} 
+                            onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, target_date: e.target.value } })} 
+                          />
+                        </div>
+                        <div>
+                          <label style={{ ...s.label, marginBottom: 4 }}>Date complétée</label>
+                          <input 
+                            type="date" 
+                            style={s.input} 
+                            value={form._editingMilestone.completed_date || ""} 
+                            onChange={e => setForm({ ...form, _editingMilestone: { ...form._editingMilestone, completed_date: e.target.value } })} 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        <button 
+                          style={s.btn("ghost")} 
+                          onClick={() => setForm({ ...form, _editingMilestone: null })}
+                        >
+                          Annuler
+                        </button>
+                        <button 
+                          style={s.btn("primary")} 
+                          onClick={async () => {
+                            const m = form._editingMilestone;
+                            if (!m.label || !m.target_value) {
+                              alert("Label et Target sont obligatoires");
+                              return;
+                            }
+                            
+                            const milestone = {
+                              id: m.id || `M${Date.now()}`,
+                              project_id: m.project_id,
+                              label: m.label,
+                              type: m.type,
+                              unit: m.unit || "",
+                              start_value: m.start_value || 0,
+                              target_value: m.target_value,
+                              current_value: m.current_value,
+                              target_date: m.target_date || null,
+                              completed_date: m.completed_date || null,
+                              order_index: m.order_index || 0,
+                            };
+                            
+                            if (m.id) {
+                              await supabase.from("project_milestones").update(milestone).eq("id", m.id);
+                              setProjectMilestones(projectMilestones.map(pm => pm.id === m.id ? milestone : pm));
+                            } else {
+                              await supabase.from("project_milestones").insert([milestone]);
+                              setProjectMilestones([...projectMilestones, milestone]);
+                            }
+                            
+                            setForm({ ...form, _editingMilestone: null });
+                          }}
+                        >
+                          {form._editingMilestone.id ? "Mettre à jour" : "Créer"}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -2504,43 +2504,9 @@ export default function App() {
               {/* Project pie charts: by status and by department */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                 
-                {/* Pie: projects by status */}
-                {(() => {
-                  let filtered = projectPieDept === "all" ? projects : projects.filter(p => p.dept === projectPieDept);
-                  
-                  const pieByStatus = PROJECT_STATUSES.map(status => ({
-                    name: status,
-                    value: filtered.filter(p => p.status === status).length,
-                    color: PROJECT_STATUS_COLOR[status],
-                  })).filter(d => d.value > 0);
-                  
-                  return (
-                    <div style={chartCard}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                        <div style={chartTitle}>Projets par statut</div>
-                        <select value={projectPieDept} onChange={e => setProjectPieDept(e.target.value)} style={selectStyle}>
-                          <option value="all">Tous depts</option>
-                          {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
-                        </select>
-                      </div>
-                      {pieByStatus.length === 0
-                        ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Aucun projet</div>
-                        : <ResponsiveContainer width="100%" height={200}>
-                          <PieChart>
-                            <Pie data={pieByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => `${entry.name} (${entry.value})`}>
-                              {pieByStatus.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      }
-                    </div>
-                  );
-                })()}
-                
                 {/* Pie: projects by department */}
                 {(() => {
-                  let filtered = projectPieStatus === "all" ? projects : projects.filter(p => p.status === projectPieStatus);
+                  let filtered = projectPieDept === "all" ? projects : projects.filter(p => p.status === projectPieDept);
                   
                   const pieByDept = DEPTS.map(dept => ({
                     name: `${dept.icon} ${dept.label}`,
@@ -2552,7 +2518,7 @@ export default function App() {
                     <div style={chartCard}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                         <div style={chartTitle}>Projets par département</div>
-                        <select value={projectPieStatus} onChange={e => setProjectPieStatus(e.target.value)} style={selectStyle}>
+                        <select value={projectPieDept} onChange={e => setProjectPieDept(e.target.value)} style={selectStyle}>
                           <option value="all">Tous statuts</option>
                           {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
@@ -2563,6 +2529,40 @@ export default function App() {
                           <PieChart>
                             <Pie data={pieByDept} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => `${entry.name} (${entry.value})`}>
                               {pieByDept.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      }
+                    </div>
+                  );
+                })()}
+                
+                {/* Pie: projects by status */}
+                {(() => {
+                  let filtered = projectPieStatus === "all" ? projects : projects.filter(p => p.dept === projectPieStatus);
+                  
+                  const pieByStatus = PROJECT_STATUSES.map(status => ({
+                    name: status,
+                    value: filtered.filter(p => p.status === status).length,
+                    color: PROJECT_STATUS_COLOR[status],
+                  })).filter(d => d.value > 0);
+                  
+                  return (
+                    <div style={chartCard}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                        <div style={chartTitle}>Projets par statut</div>
+                        <select value={projectPieStatus} onChange={e => setProjectPieStatus(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous depts</option>
+                          {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                        </select>
+                      </div>
+                      {pieByStatus.length === 0
+                        ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Aucun projet</div>
+                        : <ResponsiveContainer width="100%" height={200}>
+                          <PieChart>
+                            <Pie data={pieByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => `${entry.name} (${entry.value})`}>
+                              {pieByStatus.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                             </Pie>
                             <Tooltip />
                           </PieChart>

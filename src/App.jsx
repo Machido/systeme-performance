@@ -2358,6 +2358,82 @@ export default function App() {
                 </>);
               })()}
 
+              {/* Project metrics progress */}
+              {(() => {
+                // Get projects with metrics (metric_label exists)
+                const projectsWithMetrics = projects.filter(p => p.metric_label && p.metric_target);
+                
+                if (projectsWithMetrics.length === 0) return null;
+                
+                // Calculate progress for each project
+                const projectProgress = projectsWithMetrics.map(p => {
+                  const start = p.metric_start || 0;
+                  const target = p.metric_target || 1;
+                  const current = p.metric_final !== null && p.metric_final !== undefined ? p.metric_final : start;
+                  const range = target - start;
+                  const progress = range !== 0 ? ((current - start) / range) * 100 : 0;
+                  const progressClamped = Math.max(0, Math.min(100, Math.round(progress)));
+                  
+                  return {
+                    name: p.name,
+                    label: p.metric_label,
+                    unit: p.metric_unit || "",
+                    start,
+                    current,
+                    target,
+                    progress: progressClamped,
+                    color: getDeptColor(p.dept),
+                    dept: DEPTS.find(d => d.id === p.dept),
+                  };
+                }).sort((a, b) => b.progress - a.progress); // Sort by progress descending
+                
+                return (
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={chartTitle}>📊 Progression des projets (métriques)</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {projectProgress.map((p, idx) => (
+                        <div key={idx} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          {/* Project name + metric label */}
+                          <div style={{ minWidth: 200, maxWidth: 200 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {p.dept && <span style={{ marginRight: 4 }}>{p.dept.icon}</span>}
+                              {p.name}
+                            </div>
+                            <div style={{ fontSize: 10, color: "#888" }}>{p.label}</div>
+                          </div>
+                          
+                          {/* Progress bar */}
+                          <div style={{ flex: 1, position: "relative" }}>
+                            <div style={{ background: "#f0f0f0", borderRadius: 6, height: 24, position: "relative", overflow: "hidden" }}>
+                              <div 
+                                style={{ 
+                                  width: `${p.progress}%`, 
+                                  height: "100%", 
+                                  background: p.color, 
+                                  borderRadius: 6, 
+                                  transition: "width 0.3s ease" 
+                                }} 
+                              />
+                              {/* Text inside bar */}
+                              <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: p.progress > 50 ? "#fff" : "#666", textShadow: p.progress > 50 ? "0 1px 2px rgba(0,0,0,0.2)" : "none" }}>
+                                  {p.current} / {p.target} {p.unit}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Percentage */}
+                          <div style={{ minWidth: 50, textAlign: "right", fontSize: 13, fontWeight: 700, color: p.progress >= 100 ? "#6BBF6B" : "#5b4ef8" }}>
+                            {p.progress}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Row 1: Dial + Pie + System state */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 0 }}>
 

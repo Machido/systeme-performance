@@ -182,6 +182,13 @@ const getProjectProgress = (projectId, milestones) => {
 const getDeptIcon = (deptId) => DEPTS.find(d => d.id === deptId)?.icon || "";
 const getTempEmoji = (score) => TEMPS.find(t => t.score === score)?.emoji || "🙂";
 
+// Calculate actual hours for a project from completed tasks
+const calculateProjectActualHours = (projectId, tasks) => {
+  return tasks
+    .filter(t => t.project === projectId && t.status === "Terminé")
+    .reduce((sum, t) => sum + (t.passedH || 0), 0);
+};
+
 export default function App() {
   const [tab, setTab] = useState("kanban");
   const [projects, setProjects] = useState(initialProjects);
@@ -2599,6 +2606,146 @@ export default function App() {
                 
               </div>
 
+              {/* Hours: Estimated vs Actual (Completed Projects) */}
+              {(() => {
+                const completedProjects = projects.filter(p => p.status === "Terminé");
+                
+                if (completedProjects.length === 0) return null;
+                
+                const projectHoursData = completedProjects.map(p => {
+                  const actualHours = calculateProjectActualHours(p.id, tasks);
+                  const estHours = p.estHours || 0;
+                  const diff = actualHours - estHours;
+                  const deptData = DEPTS.find(d => d.id === p.dept);
+                  
+                  return {
+                    id: p.id,
+                    name: p.name,
+                    dept: deptData,
+                    estHours,
+                    actualHours,
+                    diff,
+                    diffPercent: estHours > 0 ? Math.round((diff / estHours) * 100) : 0,
+                    overBudget: diff > 0
+                  };
+                }).filter(p => p.estHours > 0); // Only show projects with estimates
+                
+                if (projectHoursData.length === 0) return null;
+                
+                // Sort by biggest overrun first
+                projectHoursData.sort((a, b) => b.diff - a.diff);
+                
+                // Calculate overall stats
+                const totalEst = projectHoursData.reduce((sum, p) => sum + p.estHours, 0);
+                const totalActual = projectHoursData.reduce((sum, p) => sum + p.actualHours, 0);
+                const totalDiff = totalActual - totalEst;
+                const totalDiffPercent = totalEst > 0 ? Math.round((totalDiff / totalEst) * 100) : 0;
+                
+                return (
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={chartTitle}>⏱️ Heures réelles vs estimées (projets terminés)</div>
+                    
+                    {/* Overall summary */}
+                    <div style={{ 
+                      background: totalDiff > 0 ? '#fff5f5' : '#f5fff5', 
+                      border: `1px solid ${totalDiff > 0 ? '#ffcccc' : '#ccffcc'}`,
+                      borderRadius: 6,
+                      padding: 12,
+                      marginBottom: 16,
+                      display: 'flex',
+                      justifyContent: 'space-around',
+                      fontSize: 13
+                    }}>
+                      <div>
+                        <div style={{ color: '#666', fontSize: 11 }}>Total estimé</div>
+                        <div style={{ fontWeight: 600, color: '#333' }}>{totalEst}h</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#666', fontSize: 11 }}>Total réel</div>
+                        <div style={{ fontWeight: 600, color: '#333' }}>{totalActual}h</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#666', fontSize: 11 }}>Écart moyen</div>
+                        <div style={{ fontWeight: 700, color: totalDiff > 0 ? '#d32f2f' : '#388e3c' }}>
+                          {totalDiff > 0 ? '+' : ''}{totalDiff}h ({totalDiffPercent > 0 ? '+' : ''}{totalDiffPercent}%)
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Individual project bars */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {projectHoursData.map(p => (
+                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          {/* Project name */}
+                          <div style={{ minWidth: 180, maxWidth: 180 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {p.dept && <span style={{ marginRight: 4 }}>{p.dept.icon}</span>}
+                              {p.name}
+                            </div>
+                            <div style={{ fontSize: 10, color: '#888' }}>
+                              {p.estHours}h → {p.actualHours}h
+                            </div>
+                          </div>
+                          
+                          {/* Bars: estimated (gray) + actual (colored) */}
+                          <div style={{ flex: 1, position: 'relative', height: 28 }}>
+                            {/* Estimated bar (background) */}
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              background: '#f0f0f0',
+                              borderRadius: 4,
+                              overflow: 'hidden'
+                            }}>
+                              {/* Actual bar (overlay) */}
+                              <div style={{
+                                height: '100%',
+                                width: `${Math.min((p.actualHours / Math.max(p.estHours, p.actualHours)) * 100, 100)}%`,
+                                background: p.overBudget ? '#d32f2f' : '#388e3c',
+                                transition: 'width 0.3s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                paddingLeft: 8,
+                                color: 'white',
+                                fontSize: 11,
+                                fontWeight: 600
+                              }}>
+                                {p.actualHours > 0 && `${p.actualHours}h`}
+                              </div>
+                            </div>
+                            {/* Estimated marker line */}
+                            {p.overBudget && (
+                              <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: `${(p.estHours / p.actualHours) * 100}%`,
+                                width: 2,
+                                height: '100%',
+                                background: '#999',
+                                opacity: 0.5
+                              }} />
+                            )}
+                          </div>
+                          
+                          {/* Diff */}
+                          <div style={{ minWidth: 80, textAlign: 'right' }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: p.overBudget ? '#d32f2f' : '#388e3c' }}>
+                              {p.diff > 0 ? '+' : ''}{p.diff}h
+                            </div>
+                            <div style={{ fontSize: 10, color: '#999' }}>
+                              {p.diffPercent > 0 ? '+' : ''}{p.diffPercent}%
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Row 1: Dial + Pie + System state */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 0 }}>
 
@@ -3172,6 +3319,59 @@ export default function App() {
                     <input type="number" step="100" style={s.input} value={form.revenue || ""} onChange={e => setForm({ ...form, revenue: parseFloat(e.target.value) })} />
                   </div>
                 </div>
+
+                {/* Actual hours display (for completed projects) */}
+                {form.status === "Terminé" && (() => {
+                  const actualHours = calculateProjectActualHours(form.id, tasks);
+                  const estHours = form.estHours || 0;
+                  const diff = actualHours - estHours;
+                  const diffPercent = estHours > 0 ? Math.round((diff / estHours) * 100) : 0;
+                  const overBudget = diff > 0;
+                  
+                  return (
+                    <div style={{ 
+                      border: `1px solid ${overBudget ? '#ffcccc' : '#ccffcc'}`, 
+                      borderRadius: 8, 
+                      padding: 12, 
+                      marginBottom: 16, 
+                      background: overBudget ? '#fff5f5' : '#f5fff5' 
+                    }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#444", marginBottom: 8 }}>⏱️ Heures réelles</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Estimé: {estHours}h</div>
+                          <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Réel: {actualHours}h</div>
+                          <div style={{ 
+                            fontSize: 13, 
+                            fontWeight: 600, 
+                            color: overBudget ? '#d32f2f' : '#388e3c' 
+                          }}>
+                            {diff > 0 ? '+' : ''}{diff}h ({diffPercent > 0 ? '+' : ''}{diffPercent}%)
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ 
+                            height: 24, 
+                            background: '#e8e8e8', 
+                            borderRadius: 4, 
+                            overflow: 'hidden',
+                            position: 'relative'
+                          }}>
+                            <div style={{ 
+                              height: '100%', 
+                              width: `${Math.min((actualHours / estHours) * 100, 150)}%`,
+                              background: overBudget ? '#d32f2f' : '#388e3c',
+                              transition: 'width 0.3s'
+                            }} />
+                          </div>
+                          <div style={{ fontSize: 11, color: '#999', marginTop: 4, textAlign: 'center' }}>
+                            {estHours > 0 ? Math.round((actualHours / estHours) * 100) : 0}% du budget
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Metric section */}
                 <div style={{ border: "1px solid #e8e8e8", borderRadius: 8, padding: 16, marginBottom: 16, background: "#fafafa" }}>

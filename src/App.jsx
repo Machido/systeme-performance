@@ -1682,7 +1682,8 @@ export default function App() {
                           transition: "all 0.2s",
                         }}
                         title={logged ? `${todayCount}× aujourd'hui - cliquer pour ajouter` : "Cliquer pour marquer comme fait"}>
-                        {habit.icon} {habit.name} {logged && `×${todayCount}`}
+                        <span>{habit.icon} {habit.name} {logged && `×${todayCount}`}</span>
+                        <span style={{ marginLeft: 8, opacity: 0.5 }}>{getDeptIcon(habit.department_id)}</span>
                       </button>
                     );
                   })}
@@ -1717,6 +1718,7 @@ export default function App() {
                           <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
                             <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
                               {habit.icon} {habit.name} {typeIcon}
+                              <span style={{ marginLeft: 8, opacity: 0.4, fontSize: 13 }}>{getDeptIcon(habit.department_id)}</span>
                               {habit.project_id && (
                                 <span style={{ fontSize: 11, color: "#888", fontWeight: 400, marginLeft: 8 }}>
                                   📁 {projects.find(p => p.id === habit.project_id)?.name || habit.project_id}
@@ -1883,6 +1885,7 @@ export default function App() {
                           <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
                             <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
                               {habit.icon} {habit.name} {typeIcon}
+                              <span style={{ marginLeft: 8, opacity: 0.4, fontSize: 13 }}>{getDeptIcon(habit.department_id)}</span>
                               {habit.project_id && (
                                 <span style={{ fontSize: 11, color: "#888", fontWeight: 400, marginLeft: 8 }}>
                                   📁 {projects.find(p => p.id === habit.project_id)?.name || habit.project_id}

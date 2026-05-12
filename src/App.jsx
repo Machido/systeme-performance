@@ -2405,10 +2405,10 @@ export default function App() {
 
               {/* Project milestones progress */}
               {(() => {
-                // Get projects with milestones
+                // Get projects with milestones (En cours only)
                 const projectsWithMilestones = projects.filter(p => {
                   const pms = getProjectMilestones(p.id, projectMilestones);
-                  return pms.length > 0;
+                  return pms.length > 0 && p.status === "En cours";
                 });
                 
                 if (projectsWithMilestones.length === 0) return null;

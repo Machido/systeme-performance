@@ -1664,8 +1664,10 @@ export default function App() {
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {activeHabits.map(habit => {
-                    const todayCount = todayLogs.filter(l => l.habit_id === habit.id && l.completed).length;
-                    const logged = todayCount > 0;
+                    const todaySuccessCount = todayLogs.filter(l => l.habit_id === habit.id && l.completed).length;
+                    const todayFailCount = todayLogs.filter(l => l.habit_id === habit.id && !l.completed).length;
+                    const logged = todaySuccessCount > 0;
+                    const failed = todayFailCount > 0;
                     return (
                       <button
                         key={habit.id}
@@ -1673,16 +1675,16 @@ export default function App() {
                         style={{
                           padding: "8px 14px",
                           borderRadius: 8,
-                          border: logged ? "2px solid #6BBF6B" : "1px solid #ddd",
-                          background: logged ? "#e8f5e9" : "#fff",
+                          border: logged ? "2px solid #6BBF6B" : failed ? "2px solid #E85555" : "1px solid #ddd",
+                          background: logged ? "#e8f5e9" : failed ? "#ffe8e8" : "#fff",
                           cursor: "pointer",
                           fontSize: 13,
-                          color: logged ? "#6BBF6B" : "#222",
-                          fontWeight: logged ? 600 : 400,
+                          color: logged ? "#6BBF6B" : failed ? "#E85555" : "#222",
+                          fontWeight: logged || failed ? 600 : 400,
                           transition: "all 0.2s",
                         }}
-                        title={logged ? `${todayCount}× aujourd'hui - cliquer pour ajouter` : "Cliquer pour marquer comme fait"}>
-                        <span>{habit.icon} {habit.name} {logged && `×${todayCount}`}</span>
+                        title={logged ? `${todaySuccessCount}× aujourd'hui - cliquer pour ajouter` : failed ? `❌ ${todayFailCount}× raté aujourd'hui` : "Cliquer pour marquer comme fait"}>
+                        <span>{habit.icon} {habit.name} {logged && `×${todaySuccessCount}`} {failed && `❌×${todayFailCount}`}</span>
                         <span style={{ marginLeft: 8, opacity: 0.5 }}>{getDeptIcon(habit.department_id)}</span>
                       </button>
                     );

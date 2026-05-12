@@ -1643,6 +1643,17 @@ export default function App() {
                 }}>+ Nouvelle habitude</button>
               </div>
 
+              {/* Department filter (top) */}
+              <div style={{ marginBottom: 16, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontSize: 12, color: "#aaa" }}>Département:</span>
+                <button style={s.deptBtn(habitDeptFilter === "all")} onClick={() => setHabitDeptFilter("all")}>Tous</button>
+                {DEPTS.map(d => (
+                  <button key={d.id} style={s.deptBtn(habitDeptFilter === d.id)} onClick={() => setHabitDeptFilter(d.id)}>
+                    {d.icon} {d.label}
+                  </button>
+                ))}
+              </div>
+
               {/* Today's Quick Dashboard */}
               <div style={{ ...s.card, marginBottom: 24, background: "#f9f9ff", border: "1px solid #e0e0ff" }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#5b4ef8" }}>

@@ -2436,9 +2436,16 @@ export default function App() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {projectProgress.map((p) => (
                         <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          {/* Project name */}
-                          <div style={{ minWidth: 200, maxWidth: 200 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {/* Project name - clickable */}
+                          <div 
+                            style={{ 
+                              minWidth: 200, 
+                              maxWidth: 200,
+                              cursor: "pointer"
+                            }}
+                            onClick={() => openModal("project", projects.find(proj => proj.id === p.id))}
+                          >
+                            <div style={{ fontSize: 12, fontWeight: 600, color: "#5b4ef8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {p.dept && <span style={{ marginRight: 4 }}>{p.dept.icon}</span>}
                               {p.name}
                             </div>
@@ -2676,9 +2683,16 @@ export default function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {projectHoursData.map(p => (
                         <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          {/* Project name */}
-                          <div style={{ minWidth: 180, maxWidth: 180 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {/* Project name - clickable */}
+                          <div 
+                            style={{ 
+                              minWidth: 180, 
+                              maxWidth: 180,
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => openModal("project", projects.find(proj => proj.id === p.id))}
+                          >
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#5b4ef8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {p.dept && <span style={{ marginRight: 4 }}>{p.dept.icon}</span>}
                               {p.name}
                             </div>

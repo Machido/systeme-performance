@@ -1662,31 +1662,71 @@ export default function App() {
                 <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>
                   {todayComplete}/{activeHabits.length} habitudes complétées {activeHabits.length > 0 && `(${Math.round((todayComplete / activeHabits.length) * 100)}%)`}
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {activeHabits.map(habit => {
                     const todaySuccessCount = todayLogs.filter(l => l.habit_id === habit.id && l.completed).length;
                     const todayFailCount = todayLogs.filter(l => l.habit_id === habit.id && !l.completed).length;
                     const logged = todaySuccessCount > 0;
                     const failed = todayFailCount > 0;
                     return (
-                      <button
+                      <div
                         key={habit.id}
-                        onClick={() => quickLogHabitNow(habit.id)}
                         style={{
-                          padding: "8px 14px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 12px",
                           borderRadius: 8,
                           border: logged ? "2px solid #6BBF6B" : failed ? "2px solid #E85555" : "1px solid #ddd",
                           background: logged ? "#e8f5e9" : failed ? "#ffe8e8" : "#fff",
-                          cursor: "pointer",
                           fontSize: 13,
-                          color: logged ? "#6BBF6B" : failed ? "#E85555" : "#222",
-                          fontWeight: logged || failed ? 600 : 400,
-                          transition: "all 0.2s",
-                        }}
-                        title={logged ? `${todaySuccessCount}× aujourd'hui - cliquer pour ajouter` : failed ? `❌ ${todayFailCount}× raté aujourd'hui` : "Cliquer pour marquer comme fait"}>
-                        <span>{habit.icon} {habit.name} {logged && `×${todaySuccessCount}`} {failed && `❌×${todayFailCount}`}</span>
-                        <span style={{ marginLeft: 8, opacity: 0.5 }}>{getDeptIcon(habit.department_id)}</span>
-                      </button>
+                        }}>
+                        <span style={{ color: logged ? "#6BBF6B" : failed ? "#E85555" : "#222", fontWeight: logged || failed ? 600 : 400 }}>
+                          {habit.icon} {habit.name} {logged && `×${todaySuccessCount}`} {failed && `❌×${todayFailCount}`}
+                        </span>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => quickLogHabitNow(habit.id)}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 6,
+                              border: "1px solid #6BBF6B",
+                              background: "#6BBF6B",
+                              color: "#fff",
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                            title="Marquer comme fait">
+                            ✓
+                          </button>
+                          <button
+                            onClick={async () => {
+                              const newLog = {
+                                id: `HL${Date.now()}`,
+                                habit_id: habit.id,
+                                logged_at: getLocalDateTimeStr(),
+                                completed: false,
+                              };
+                              const updated = [...habitLogs, newLog];
+                              setHabitLogs(updated);
+                              await supabase.from("habit_logs").insert([newLog]);
+                            }}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 6,
+                              border: "1px solid #E85555",
+                              background: "#E85555",
+                              color: "#fff",
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                            title="Marquer comme raté">
+                            ✗
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

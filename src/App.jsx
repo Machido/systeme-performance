@@ -1760,6 +1760,22 @@ export default function App() {
                               }}>
                               ✓ Log
                             </button>
+                            <button
+                              onClick={() => {
+                                setForm({
+                                  _habit: habit,
+                                  logged_at: getLocalDateTimeStr(),
+                                  completed: false
+                                });
+                                setShowModal("habitLog");
+                              }}
+                              style={{
+                                ...s.btn("danger"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              ✗ Échec
+                            </button>
                           </div>
                         </div>
 
@@ -1909,6 +1925,22 @@ export default function App() {
                                 fontSize: 13,
                               }}>
                               ✓ Log
+                            </button>
+                            <button
+                              onClick={() => {
+                                setForm({
+                                  _habit: habit,
+                                  logged_at: getLocalDateTimeStr(),
+                                  completed: false
+                                });
+                                setShowModal("habitLog");
+                              }}
+                              style={{
+                                ...s.btn("danger"),
+                                padding: "6px 12px",
+                                fontSize: 13,
+                              }}>
+                              ✗ Échec
                             </button>
                           </div>
                         </div>

@@ -3747,7 +3747,17 @@ export default function App() {
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    {form.id && <button style={s.btnDanger} onClick={() => { if (window.confirm("Supprimer ce projet ?")) { deleteRow("projects", form.id); setShowModal(null); } }}>🗑 Supprimer</button>}
+                    {form.id && <button style={s.btnDanger} onClick={async () => { 
+                      if (window.confirm("Supprimer ce projet et toutes ses tâches associées ?")) { 
+                        // Delete all tasks linked to this project
+                        await supabase.from("tasks").delete().eq("project", form.id);
+                        // Delete all milestones linked to this project
+                        await supabase.from("project_milestones").delete().eq("project_id", form.id);
+                        // Delete the project
+                        deleteRow("projects", form.id); 
+                        setShowModal(null); 
+                      } 
+                    }}>🗑 Supprimer</button>}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>

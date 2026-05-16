@@ -3558,7 +3558,13 @@ export default function App() {
                   {form.status === "Abandonné" && (
                     <div style={{ flex: 1 }}>
                       <label style={s.label}>Raison abandon</label>
-                      <select style={s.select} value={form.abandonReason || ""} onChange={e => setForm({ ...form, abandonReason: e.target.value })}>
+                      <select style={s.select} value={form.abandonReason?.startsWith('Autre:') ? 'Autre' : (form.abandonReason || "")} onChange={e => {
+                        if (e.target.value === 'Autre') {
+                          setForm({ ...form, abandonReason: 'Autre:' });
+                        } else {
+                          setForm({ ...form, abandonReason: e.target.value });
+                        }
+                      }}>
                         <option value="">(Non spécifiée)</option>
                         <option value="Trop ambitieux">Trop ambitieux</option>
                         <option value="Manque de temps">Manque de temps</option>
@@ -3570,6 +3576,20 @@ export default function App() {
                     </div>
                   )}
                 </div>
+                
+                {/* Autre raison (text libre) - only if "Autre" selected */}
+                {form.status === "Abandonné" && (form.abandonReason === 'Autre:' || form.abandonReason?.startsWith('Autre:')) && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={s.label}>Précisez la raison</label>
+                    <input 
+                      type="text" 
+                      style={s.input} 
+                      placeholder="Ex: Pas les bons outils, trop compliqué, etc."
+                      value={form.abandonReason?.replace('Autre:', '') || ''} 
+                      onChange={e => setForm({ ...form, abandonReason: `Autre:${e.target.value}` })}
+                    />
+                  </div>
+                )}
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

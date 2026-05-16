@@ -3746,7 +3746,7 @@ export default function App() {
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Contexte, blocages, prochaines étapes..." />
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
+                  <div style={{ display: "flex", gap: 8 }}>
                     {form.id && <button style={s.btnDanger} onClick={async () => { 
                       if (window.confirm("Supprimer ce projet et toutes ses tâches associées ?")) { 
                         // Delete all tasks linked to this project
@@ -3758,6 +3758,71 @@ export default function App() {
                         setShowModal(null); 
                       } 
                     }}>🗑 Supprimer</button>}
+                    
+                    {form.id && <button style={s.btn("secondary")} onClick={async () => {
+                      if (window.confirm("Dupliquer ce projet avec toutes ses tâches et milestones ?")) {
+                        const timestamp = Date.now();
+                        const newProjectId = `P${timestamp}`;
+                        
+                        // Copy project
+                        const newProject = {
+                          ...form,
+                          id: newProjectId,
+                          name: `${form.name} (copie)`,
+                          createdDate: getLocalDateStr(),
+                          startDate: getLocalDateStr(),
+                          endDate: null,
+                          completedDate: null
+                        };
+                        
+                        await supabase.from("projects").insert([newProject]);
+                        
+                        // Copy tasks
+                        const { data: projectTasks } = await supabase
+                          .from("tasks")
+                          .select("*")
+                          .eq("project", form.id);
+                        
+                        if (projectTasks && projectTasks.length > 0) {
+                          const newTasks = projectTasks.map((t, index) => ({
+                            ...t,
+                            id: `T${timestamp}_${index}`,
+                            project: newProjectId,
+                            createdDate: getLocalDateStr(),
+                            due: null,
+                            status: "À faire",
+                            completedDate: null,
+                            passedH: null
+                          }));
+                          await supabase.from("tasks").insert(newTasks);
+                        }
+                        
+                        // Copy milestones
+                        const { data: projectMilestones } = await supabase
+                          .from("project_milestones")
+                          .select("*")
+                          .eq("project_id", form.id);
+                        
+                        if (projectMilestones && projectMilestones.length > 0) {
+                          const newMilestones = projectMilestones.map((m, index) => ({
+                            ...m,
+                            id: `M${timestamp}_${index}`,
+                            project_id: newProjectId,
+                            target_date: null,
+                            completed_date: null,
+                            current_value: null
+                          }));
+                          await supabase.from("project_milestones").insert(newMilestones);
+                        }
+                        
+                        // Refresh data
+                        await Promise.all([fetchProjects(), fetchTasks(), fetchProjectMilestones()]);
+                        
+                        // Open the new project
+                        setForm(newProject);
+                        alert(`Projet dupliqué ! ${projectTasks?.length || 0} tâches et ${projectMilestones?.length || 0} milestones copiés.`);
+                      }
+                    }}>📋 Dupliquer</button>}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>

@@ -2701,6 +2701,167 @@ export default function App() {
                 
               </div>
 
+              {/* Project Status Distribution (All Time) */}
+              {(() => {
+                const statusCounts = {};
+                PROJECT_STATUSES.forEach(s => { statusCounts[s] = 0; });
+                projects.forEach(p => {
+                  if (statusCounts[p.status] !== undefined) statusCounts[p.status]++;
+                });
+                
+                const total = projects.length;
+                if (total === 0) return null;
+                
+                const completed = statusCounts["Terminé"] || 0;
+                const abandoned = statusCounts["Abandonné"] || 0;
+                const completionRate = Math.round((completed / total) * 100);
+                const abandonRate = Math.round((abandoned / total) * 100);
+                
+                const statusData = PROJECT_STATUSES.map(status => ({
+                  name: status,
+                  value: statusCounts[status],
+                  color: status === "Terminé" ? "#6BBF6B" : 
+                         status === "Abandonné" ? "#E85555" :
+                         status === "En cours" ? "#5b4ef8" : "#aaa"
+                })).filter(d => d.value > 0);
+                
+                return (
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={chartTitle}>📊 Statuts projets (tous les temps)</div>
+                    
+                    {/* Summary stats */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '1fr 1fr 1fr', 
+                      gap: 12, 
+                      marginBottom: 16,
+                      padding: 12,
+                      background: '#f9f9f9',
+                      borderRadius: 8
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>Total projets</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: '#333' }}>{total}</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>Taux complétion</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: completionRate >= 40 ? '#6BBF6B' : '#E8A838' }}>
+                          {completionRate}%
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>Taux abandon</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: abandonRate >= 30 ? '#E85555' : '#E8A838' }}>
+                          {abandonRate}%
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Pie chart */}
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie 
+                          data={statusData} 
+                          dataKey="value" 
+                          nameKey="name" 
+                          cx="50%" 
+                          cy="50%" 
+                          outerRadius={80}
+                          label={(entry) => `${entry.name} (${entry.value})`}
+                        >
+                          {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                );
+              })()}
+
+              {/* Abandoned Projects Over Time */}
+              {(() => {
+                const abandonedProjects = projects.filter(p => p.status === "Abandonné" && p.completedDate);
+                
+                if (abandonedProjects.length === 0) return null;
+                
+                // Group by month
+                const monthMap = {};
+                abandonedProjects.forEach(p => {
+                  const month = p.completedDate.substring(0, 7); // YYYY-MM
+                  monthMap[month] = (monthMap[month] || 0) + 1;
+                });
+                
+                const monthData = Object.keys(monthMap)
+                  .sort()
+                  .map(month => ({
+                    month,
+                    count: monthMap[month]
+                  }));
+                
+                return (
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={chartTitle}>📉 Projets abandonnés par mois</div>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={monthData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="count" stroke="#E85555" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                );
+              })()}
+
+              {/* Abandon Reasons */}
+              {(() => {
+                const abandonedWithReason = projects.filter(p => p.status === "Abandonné" && p.abandonReason);
+                
+                if (abandonedWithReason.length === 0) return null;
+                
+                const reasonMap = {};
+                abandonedWithReason.forEach(p => {
+                  reasonMap[p.abandonReason] = (reasonMap[p.abandonReason] || 0) + 1;
+                });
+                
+                const reasonData = Object.keys(reasonMap)
+                  .map(reason => ({
+                    name: reason,
+                    value: reasonMap[reason],
+                    percent: Math.round((reasonMap[reason] / abandonedWithReason.length) * 100)
+                  }))
+                  .sort((a, b) => b.value - a.value);
+                
+                return (
+                  <div style={{ ...chartCard, marginBottom: 16 }}>
+                    <div style={chartTitle}>🤔 Raisons d'abandon ({abandonedWithReason.length} projets)</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {reasonData.map(r => (
+                        <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ minWidth: 200, fontSize: 13, fontWeight: 600, color: '#333' }}>
+                            {r.name}
+                          </div>
+                          <div style={{ flex: 1, position: 'relative' }}>
+                            <div style={{ background: '#f0f0f0', borderRadius: 4, height: 24, overflow: 'hidden' }}>
+                              <div style={{ 
+                                width: `${r.percent}%`, 
+                                height: '100%', 
+                                background: '#E85555',
+                                transition: 'width 0.3s'
+                              }} />
+                            </div>
+                          </div>
+                          <div style={{ minWidth: 80, textAlign: 'right', fontSize: 13, fontWeight: 700, color: '#E85555' }}>
+                            {r.value} ({r.percent}%)
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Hours: Estimated vs Actual (Completed Projects) */}
               {(() => {
                 const completedProjects = projects.filter(p => p.status === "Terminé");
@@ -3392,6 +3553,22 @@ export default function App() {
                       {PROJECT_STATUSES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </div>
+                  
+                  {/* Raison abandon (only if status = Abandonné) */}
+                  {form.status === "Abandonné" && (
+                    <div style={{ flex: 1 }}>
+                      <label style={s.label}>Raison abandon</label>
+                      <select style={s.select} value={form.abandonReason || ""} onChange={e => setForm({ ...form, abandonReason: e.target.value })}>
+                        <option value="">(Non spécifiée)</option>
+                        <option value="Trop ambitieux">Trop ambitieux</option>
+                        <option value="Manque de temps">Manque de temps</option>
+                        <option value="Plus d'intérêt">Plus d'intérêt</option>
+                        <option value="Priorité changée">Priorité changée</option>
+                        <option value="Bloqué (matériel/compétence)">Bloqué (matériel/compétence)</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 <div style={s.row}>

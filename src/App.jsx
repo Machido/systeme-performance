@@ -202,6 +202,22 @@ export default function App() {
   const [storageReady, setStorageReady] = useState(false);
   const [dataTab, setDataTab] = useState("projects");
   const [veloDept, setVeloDept] = useState("all");
+  const [dayChangeCounter, setDayChangeCounter] = useState(0);
+  
+  // Force re-render when day changes (check every 5 minutes)
+  useEffect(() => {
+    let lastDate = new Date().toDateString();
+    
+    const interval = setInterval(() => {
+      const currentDate = new Date().toDateString();
+      if (currentDate !== lastDate) {
+        lastDate = currentDate;
+        setDayChangeCounter(c => c + 1); // Force re-render
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+    
+    return () => clearInterval(interval);
+  }, []);
   const [veloProject, setVeloProject] = useState("all");
   const [veloPeriod, setVeloPeriod] = useState("daily");
   const [veloDateRange, setVeloDateRange] = useState("30"); // "7", "14", "30", "all"

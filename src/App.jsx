@@ -57,10 +57,11 @@ const initialJournal = [
   { id: "J003", date: "2026-02-24", type: "📝 Note", temp: 4, title: "Bonne session sport", description: "Dans le flow - 45 min sans regarder l'heure", project: "P005", dept: "res", priority: "Basse", nextAction: "" },
 ];
 
-const today = new Date(); today.setHours(0, 0, 0, 0);
-const todayStr = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
-const tomorrowDate = new Date(today); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+// Helper function to get today's date string (YYYY-MM-DD)
+const getTodayStr = () => {
+  const today = new Date();
+  return today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
+};
 const endOfWeek = new Date(today);
 endOfWeek.setDate(endOfWeek.getDate() + (endOfWeek.getDay() === 0 ? 0 : 7 - endOfWeek.getDay()));
 const endOfWeekStr = endOfWeek.toISOString().split("T")[0];
@@ -202,6 +203,25 @@ export default function App() {
   const [storageReady, setStorageReady] = useState(false);
   const [dataTab, setDataTab] = useState("projects");
   const [veloDept, setVeloDept] = useState("all");
+  const [todayStr, setTodayStr] = useState(getTodayStr());
+  
+  // Update todayStr every minute to catch day changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newToday = getTodayStr();
+      if (newToday !== todayStr) {
+        setTodayStr(newToday);
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
+  }, [todayStr]);
+  
+  const tomorrowStr = useMemo(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  }, [todayStr]); // Recalculate when todayStr changes
   const [veloProject, setVeloProject] = useState("all");
   const [veloPeriod, setVeloPeriod] = useState("daily");
   const [veloDateRange, setVeloDateRange] = useState("30"); // "7", "14", "30", "all"

@@ -587,7 +587,7 @@ export default function App() {
     setShowModal(null);
     if (wasCompleted) {
       setCompletionJournal({ taskId: record.id, taskName: record.name, project: record.project, dept: record.dept });
-      setForm({ type: "📝 Note", temp: 5, dept: record.dept, project: record.project, priority: "Moyenne", title: "", description: "" });
+      setForm({ type: "📝 Note", dept: record.dept, project: record.project, priority: "Moyenne", title: "", description: "" });
     }
   };
 
@@ -1170,7 +1170,7 @@ export default function App() {
                     <input type="checkbox" checked={kanbanFocusOnly} onChange={e => setKanbanFocusOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
                     🔥 Focus uniquement
                   </label>
-                  <button style={s.btn("primary")} onClick={() => openModal("task", { status: "À faire", priority: "Moyenne", dept: deptFilter === "all" ? "ops" : deptFilter, temp: 2 })}>+ Nouvelle tâche</button>
+                  <button style={s.btn("primary")} onClick={() => openModal("task", { status: "À faire", priority: "Moyenne", dept: deptFilter === "all" ? "ops" : deptFilter })}>+ Nouvelle tâche</button>
                 </div>
               </div>
 
@@ -3176,7 +3176,7 @@ export default function App() {
                 </select>
               </div>
               <div style={{ marginLeft: "auto" }}>
-                <button style={s.btn("primary")} onClick={() => openModal("journal", { type: "📝 Note", temp: 5, dept: journalDeptFilter === "all" ? "ops" : journalDeptFilter, priority: "Moyenne" })}>+ Entrée</button>
+                <button style={s.btn("primary")} onClick={() => openModal("journal", { type: "📝 Note", dept: journalDeptFilter === "all" ? "ops" : journalDeptFilter, priority: "Moyenne" })}>+ Entrée</button>
               </div>
             </div>
             {journalList.map(j => {
@@ -3377,8 +3377,8 @@ export default function App() {
                   <button style={s.btn("ghost")} onClick={() => exportCSV(data, `${dataTab}.csv`)}>↓ Export CSV</button>
                   <button style={s.btn("primary")} onClick={() => {
                     if (dataTab === "projects") openModal("project", { status: "Potentiel", dept: "ops", estHours: 0, revenue: 0 });
-                    else if (dataTab === "tasks") openModal("task", { status: "À faire", priority: "Moyenne", dept: "ops", temp: 2 });
-                    else if (dataTab === "journal") openModal("journal", { type: "📝 Note", temp: 2, dept: "ops", priority: "Moyenne" });
+                    else if (dataTab === "tasks") openModal("task", { status: "À faire", priority: "Moyenne", dept: "ops" });
+                    else if (dataTab === "journal") openModal("journal", { type: "📝 Note", dept: "ops", priority: "Moyenne" });
                     else if (dataTab === "habits") openModal("habit", { habit_type: "acquire", target_days: 60, allowed_misses: 0, icon: "✅" });
                     else if (dataTab === "habit_logs") openModal("habitLog", { logged_at: getLocalDateTimeStr(), completed: true });
                   }}>+ Ajouter</button>
@@ -4135,12 +4135,13 @@ export default function App() {
                 </>)}
 
                 {form.type === "📝 Note" && (<>
-                  <label style={s.label}>Température (0-10)</label>
+                  <label style={s.label}>Température (1-10) *<span style={{ color: '#E85555', fontSize: 12, marginLeft: 4 }}>obligatoire</span></label>
                   <div style={{ display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" }}>
                     {TEMPS.map(t => (
                       <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
                     ))}
                   </div>
+                  {form.type === "📝 Note" && !form.temp && <div style={{ color: '#E85555', fontSize: 11, marginTop: -4, marginBottom: 8 }}>⚠️ Veuillez choisir une température</div>}
                 </>)}
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
@@ -4149,7 +4150,16 @@ export default function App() {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
-                    <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
+                    <button 
+                      style={s.btn("primary")} 
+                      onClick={() => {
+                        if (form.type === "📝 Note" && !form.temp) {
+                          alert("⚠️ Veuillez choisir une température (1-10) avant d'enregistrer.");
+                          return;
+                        }
+                        saveJournal();
+                      }}
+                    >Enregistrer</button>
                   </div>
                 </div>
               </>
@@ -4352,17 +4362,27 @@ export default function App() {
                 <input style={s.input} value={form.title || ""} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Résumé en quelques mots..." />
 
                 {form.type === "📝 Note" && (<>
-                  <label style={s.label}>Température (0-10)</label>
+                  <label style={s.label}>Température (1-10) *<span style={{ color: '#E85555', fontSize: 12, marginLeft: 4 }}>obligatoire</span></label>
                   <div style={{ display: "flex", gap: 3, marginBottom: 8, flexWrap: "wrap" }}>
                     {TEMPS.map(t => (
                       <button key={t.score} style={{ ...s.tempBtn(form.temp === t.score), flex: "0 0 auto", padding: "4px 6px", fontSize: 15 }} onClick={() => setForm({ ...form, temp: t.score })} title={`${t.score} - ${t.label}`}>{t.emoji}</button>
                     ))}
                   </div>
+                  {!form.temp && <div style={{ color: '#E85555', fontSize: 11, marginTop: -4, marginBottom: 8 }}>⚠️ Veuillez choisir une température</div>}
                 </>)}
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
                   <button style={s.btn("ghost")} onClick={() => { setCompletionJournal(null); setJournalSaveSuccess(false); }}>Passer</button>
-                  <button style={s.btn("primary")} onClick={saveJournal}>Enregistrer</button>
+                  <button 
+                    style={s.btn("primary")} 
+                    onClick={() => {
+                      if (form.type === "📝 Note" && !form.temp) {
+                        alert("⚠️ Veuillez choisir une température (1-10) avant d'enregistrer.");
+                        return;
+                      }
+                      saveJournal();
+                    }}
+                  >Enregistrer</button>
                 </div>
               </>
             )}

@@ -2536,7 +2536,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>🎯 Progression des projets (milestones)</div>
+                    <div style={chartTitle}>📊 1. Progression des projets (milestones)</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {projectProgress.map((p) => (
                         <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -2589,10 +2589,10 @@ export default function App() {
                 if (projectCreatedDept !== "all") filteredProjects = filteredProjects.filter(p => p.dept === projectCreatedDept);
                 if (projectCreatedStatus !== "all") filteredProjects = filteredProjects.filter(p => p.status === projectCreatedStatus);
                 
-                // Build date map (use startDate or fallback to today for old projects without startDate)
+                // Build date map (use startDate or createdDate, fallback to today)
                 const dateMap = {};
                 filteredProjects.forEach(p => {
-                  const createdDate = p.startDate || todayStr; // Fallback if no startDate
+                  const createdDate = p.startDate || p.createdDate || todayStr;
                   if (createdDate) {
                     dateMap[createdDate] = dateMap[createdDate] || { date: createdDate, created: 0 };
                     dateMap[createdDate].created++;
@@ -2600,7 +2600,6 @@ export default function App() {
                 });
                 
                 const projectDataRaw = Object.values(dateMap)
-                  .filter(d => d.date <= todayStr)
                   .sort((a, b) => a.date.localeCompare(b.date));
                 
                 const projectData = aggregateByPeriod(projectDataRaw, projectCreatedPeriod, ["created"], "sum");
@@ -2609,7 +2608,7 @@ export default function App() {
                   <div style={{ ...chartCard, marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={chartTitle}>📈 Projets créés au fil du temps</div>
+                        <div style={chartTitle}>📈 2. Projets créés au fil du temps</div>
                         <div style={{ display: "flex", gap: 4 }}>
                           {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                             <button key={k} style={toggleStyle(projectCreatedPeriod === k)} onClick={() => setProjectCreatedPeriod(k)}>{l}</button>
@@ -2660,7 +2659,7 @@ export default function App() {
                   return (
                     <div style={chartCard}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                        <div style={chartTitle}>Projets par département</div>
+                        <div style={chartTitle}>🥧 3. Projets par département</div>
                         <select value={projectPieDept} onChange={e => setProjectPieDept(e.target.value)} style={selectStyle}>
                           <option value="all">Tous statuts</option>
                           {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -2694,7 +2693,7 @@ export default function App() {
                   return (
                     <div style={chartCard}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                        <div style={chartTitle}>Projets par statut</div>
+                        <div style={chartTitle}>🥧 4. Projets par statut</div>
                         <select value={projectPieStatus} onChange={e => setProjectPieStatus(e.target.value)} style={selectStyle}>
                           <option value="all">Tous depts</option>
                           {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
@@ -2743,7 +2742,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>📊 Statuts projets (tous les temps)</div>
+                    <div style={chartTitle}>📊 5. Statuts projets (tous les temps)</div>
                     
                     {/* Summary stats */}
                     <div style={{ 
@@ -2816,7 +2815,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>📉 Projets abandonnés par mois</div>
+                    <div style={chartTitle}>📉 6. Projets abandonnés par mois</div>
                     <ResponsiveContainer width="100%" height={200}>
                       <LineChart data={monthData}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -2851,7 +2850,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>🤔 Raisons d'abandon ({abandonedWithReason.length} projets)</div>
+                    <div style={chartTitle}>🤔 7. Raisons d'abandon ({abandonedWithReason.length} projets)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {reasonData.map(r => (
                         <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -2915,7 +2914,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>⏱️ Heures réelles vs estimées (projets terminés)</div>
+                    <div style={chartTitle}>⏱️ 8. Heures réelles vs estimées (projets terminés)</div>
                     
                     {/* Overall summary */}
                     <div style={{ 

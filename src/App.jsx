@@ -9,8 +9,8 @@ const DEPTS = [
   { id: "res", label: "Résilience", icon: "🌱", color: "#B07FE8" },
 ];
 
-const STATUSES = ["À faire", "Terminé", "Abandonné"];
-const STATUS_ICONS = { "À faire": "📋", "Terminé": "✅", "Abandonné": "🗃" };
+const STATUSES = ["À faire", "En cours", "Terminé", "Abandonné"];
+const STATUS_ICONS = { "À faire": "📋", "En cours": "⚡", "Terminé": "✅", "Abandonné": "🗃" };
 const PRIORITIES = ["Haute", "Moyenne", "Basse"];
 const PRIO_COLOR = { Haute: "#E85555", Moyenne: "#E8A838", Basse: "#888" };
 const PROJECT_STATUSES = ["Potentiel", "En cours", "Terminé", "Abandonné"];
@@ -568,24 +568,18 @@ export default function App() {
     let updated, record;
     const prevStatus = form.id ? tasks.find(t => t.id === form.id)?.status : null;
     const wasCompleted = form.id && prevStatus !== "Terminé" && form.status === "Terminé";
-    const wasAbandoned = form.id && prevStatus !== "Abandonné" && form.status === "Abandonné";
     if (form.id) {
       record = { ...tasks.find(t => t.id === form.id), ...form };
-      // Auto-set completedDate if status changes to Terminé
+      // Only auto-set completedDate if status changes to Terminé AND no date was manually entered
       if (wasCompleted && !form.completedDate) record.completedDate = todayStr;
-      // Clear completedDate if status changes away from Terminé
+      // Only clear if status changes away from Terminé
       if (prevStatus === "Terminé" && form.status !== "Terminé") record.completedDate = null;
-      // Auto-set abandonedDate if status changes to Abandonné
-      if (wasAbandoned && !form.abandonedDate) record.abandonedDate = todayStr;
-      // Clear abandonedDate if status changes away from Abandonné
-      if (prevStatus === "Abandonné" && form.status !== "Abandonné") record.abandonedDate = null;
       updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
       const id = "T" + Date.now();
       record = { ...form, id, passedH: 0, temp: form.temp ?? 5, status: form.status || "À faire", createdDate: todayStr };
-      // Auto-set dates if creating new task with specific status
+      // Only auto-set if creating new task as Terminé AND no date provided
       if (form.status === "Terminé" && !form.completedDate) record.completedDate = todayStr;
-      if (form.status === "Abandonné" && !form.abandonedDate) record.abandonedDate = todayStr;
       updated = [...tasks, record];
     }
     updateTasks(updated);
@@ -2117,6 +2111,7 @@ export default function App() {
           const fp = deptFilter === "all" ? projects : projects.filter(p => p.dept === deptFilter);
           const ft = filteredTasks.filter(t => t.status !== "Abandonné");
           const done = ft.filter(t => t.status === "Terminé").length;
+          const inProgress = ft.filter(t => t.status === "En cours").length;
           const todo = ft.filter(t => t.status === "À faire").length;
           const overdue = ft.filter(t => isOverdue(t.due) && t.status !== "Terminé").length;
           const completion = ft.length ? Math.round((done / ft.length) * 100) : 0;
@@ -2147,6 +2142,7 @@ export default function App() {
               name: d.icon,
               label: d.label,
               Terminé: dt.filter(t => t.status === "Terminé").length,
+              "En cours": dt.filter(t => t.status === "En cours").length,
               "À faire": dt.filter(t => t.status === "À faire").length,
               color: d.color,
             };
@@ -2179,6 +2175,7 @@ export default function App() {
           // Pie: task status breakdown
           const pieData = [
             { name: "Terminé", value: done, color: "#6BBF6B" },
+            { name: "En cours", value: inProgress, color: "#4A90D9" },
             { name: "À faire", value: todo, color: "#E8A838" },
             { name: "En retard", value: overdue, color: "#E85555" },
           ].filter(d => d.value > 0);
@@ -3076,7 +3073,7 @@ export default function App() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
                     {[
                       ["Projets actifs", fp.filter(p => p.status === "En cours").length, "#4A90D9"],
-                      ["Tâches à faire", todo, "#E8A838"],
+                      ["Tâches en cours", inProgress, "#E8A838"],
                       ["En retard", overdue, overdue > 0 ? "#E85555" : "#6BBF6B"],
                       ["Terminées", done, "#6BBF6B"],
                     ].map(([label, val, color]) => (
@@ -3107,6 +3104,7 @@ export default function App() {
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                     <Bar dataKey="À faire" stackId="a" fill="#E8A83866" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="En cours" stackId="a" fill="#4A90D966" />
                     <Bar dataKey="Terminé" stackId="a" fill="#6BBF6B" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -3134,125 +3132,6 @@ export default function App() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-
-            {/* Task status charts */}
-            <div style={{ marginTop: 24 }}>
-              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, color: "#333" }}>📋 TÂCHES - Statistiques</div>
-              
-              {/* Task status overview (all time) */}
-              <div style={{ ...chartCard, marginBottom: 16 }}>
-                <div style={chartTitle}>📊 9. Statuts tâches (tous les temps)</div>
-                {(() => {
-                  const tasksByStatus = STATUSES.reduce((acc, status) => {
-                    acc[status] = tasks.filter(t => t.status === status).length;
-                    return acc;
-                  }, {});
-                  
-                  const totalTasks = tasks.length;
-                  const completedCount = tasksByStatus["Terminé"] || 0;
-                  const abandonedCount = tasksByStatus["Abandonné"] || 0;
-                  const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
-                  const abandonRate = totalTasks > 0 ? Math.round((abandonedCount / totalTasks) * 100) : 0;
-                  
-                  const pieData = STATUSES.map(status => ({
-                    name: status,
-                    value: tasksByStatus[status]
-                  })).filter(d => d.value > 0);
-                  
-                  const COLORS = {
-                    "À faire": "#E8A838",
-                    "Terminé": "#6BBF6B",
-                    "Abandonné": "#E85555"
-                  };
-                  
-                  return (
-                    <div>
-                      <div style={{ display: 'flex', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
-                        <div>
-                          <div style={{ color: '#666', fontSize: 11 }}>Total tâches</div>
-                          <div style={{ fontWeight: 700, fontSize: 20, color: '#333' }}>{totalTasks}</div>
-                        </div>
-                        <div>
-                          <div style={{ color: '#666', fontSize: 11 }}>Taux complétion</div>
-                          <div style={{ fontWeight: 700, fontSize: 20, color: '#6BBF6B' }}>{completionRate}% ✅</div>
-                        </div>
-                        <div>
-                          <div style={{ color: '#666', fontSize: 11 }}>Taux abandon</div>
-                          <div style={{ fontWeight: 700, fontSize: 20, color: abandonRate > 20 ? '#E85555' : '#888' }}>{abandonRate}% {abandonRate > 20 ? '⚠️' : ''}</div>
-                        </div>
-                      </div>
-                      
-                      {pieData.length > 0 && (
-                        <ResponsiveContainer width="100%" height={250}>
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={entry => `${entry.name} (${entry.value})`}
-                              outerRadius={90}
-                              fill="#8884d8"
-                              dataKey="value"
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[entry.name] || "#ccc"} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-              
-              {/* Abandoned tasks timeline */}
-              {(() => {
-                const abandonedTasks = tasks.filter(t => t.status === "Abandonné" && t.abandonedDate);
-                
-                if (abandonedTasks.length === 0) return null;
-                
-                const dateMap = {};
-                abandonedTasks.forEach(t => {
-                  const date = t.abandonedDate;
-                  if (date) {
-                    dateMap[date] = dateMap[date] || { date, count: 0 };
-                    dateMap[date].count++;
-                  }
-                });
-                
-                const abandonData = Object.values(dateMap)
-                  .sort((a, b) => a.date.localeCompare(b.date))
-                  .map(d => ({ ...d, month: d.date.slice(0, 7) }))
-                  .reduce((acc, d) => {
-                    const existing = acc.find(x => x.month === d.month);
-                    if (existing) {
-                      existing.count += d.count;
-                    } else {
-                      acc.push({ month: d.month, count: d.count });
-                    }
-                    return acc;
-                  }, []);
-                
-                return (
-                  <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>📉 10. Tâches abandonnées par mois</div>
-                    <ResponsiveContainer width="100%" height={220}>
-                      <LineChart data={abandonData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
-                        <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        <Line type="monotone" dataKey="count" name="Tâches abandonnées" stroke="#E85555" strokeWidth={2.5} dot={{ fill: "#E85555", r: 4 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                );
-              })()}
             </div>
           );
         })()}

@@ -203,6 +203,8 @@ export default function App() {
   const [dataTab, setDataTab] = useState("projects");
   const [veloDept, setVeloDept] = useState("all");
   const [dayChangeCounter, setDayChangeCounter] = useState(0);
+  const [taskProjectSearch, setTaskProjectSearch] = useState("");
+  const [taskProjectDropdownOpen, setTaskProjectDropdownOpen] = useState(false);
   
   // Force re-render when day changes (check every 5 minutes)
   useEffect(() => {
@@ -218,6 +220,19 @@ export default function App() {
     
     return () => clearInterval(interval);
   }, []);
+  
+  // Close task project dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (taskProjectDropdownOpen && !e.target.closest('.project-dropdown-container')) {
+        setTaskProjectDropdownOpen(false);
+        setTaskProjectSearch("");
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [taskProjectDropdownOpen]);
   const [veloProject, setVeloProject] = useState("all");
   const [veloPeriod, setVeloPeriod] = useState("daily");
   const [veloDateRange, setVeloDateRange] = useState("30"); // "7", "14", "30", "all"
@@ -3461,13 +3476,134 @@ export default function App() {
                 <input style={s.input} value={form.name || ""} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ce qui doit être fait..." />
 
                 <label style={s.label}>Projet</label>
-                <select style={s.select} value={form.project || ""} onChange={e => {
-                  const proj = projects.find(p => p.id === e.target.value);
-                  setForm({ ...form, project: e.target.value, dept: proj ? proj.dept : form.dept });
-                }}>
-                  <option value="">- Sans projet -</option>
-                  {getProjectOptionsWithSeparators()}
-                </select>
+                <div className="project-dropdown-container" style={{ position: 'relative' }}>
+                  <div 
+                    style={{
+                      ...s.select,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                    onClick={() => {
+                      setTaskProjectDropdownOpen(!taskProjectDropdownOpen);
+                      setTaskProjectSearch("");
+                    }}
+                  >
+                    <span>{form.project ? projects.find(p => p.id === form.project)?.name || "- Sans projet -" : "- Sans projet -"}</span>
+                    <span style={{ fontSize: 10 }}>▼</span>
+                  </div>
+                  
+                  {taskProjectDropdownOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      maxHeight: 300,
+                      overflowY: 'auto',
+                      background: '#fff',
+                      border: '1px solid #ddd',
+                      borderRadius: 6,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 1000,
+                      marginTop: 4
+                    }}>
+                      {/* Search bar */}
+                      <div style={{ padding: 8, borderBottom: '1px solid #eee', position: 'sticky', top: 0, background: '#fff' }}>
+                        <input 
+                          type="text"
+                          placeholder="🔍 Chercher un projet..."
+                          value={taskProjectSearch}
+                          onChange={e => setTaskProjectSearch(e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            border: '1px solid #ddd',
+                            borderRadius: 4,
+                            fontSize: 13
+                          }}
+                          autoFocus
+                        />
+                      </div>
+                      
+                      {/* Sans projet option */}
+                      <div 
+                        style={{
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          background: !form.project ? '#f0f0ff' : 'transparent',
+                          fontSize: 13
+                        }}
+                        onClick={() => {
+                          setForm({ ...form, project: "" });
+                          setTaskProjectDropdownOpen(false);
+                          setTaskProjectSearch("");
+                        }}
+                      >
+                        - Sans projet -
+                      </div>
+                      
+                      {/* Project list with department groups */}
+                      {(() => {
+                        const searchLower = taskProjectSearch.toLowerCase();
+                        const filteredProjects = projects.filter(p => 
+                          p.name.toLowerCase().includes(searchLower)
+                        );
+                        
+                        if (filteredProjects.length === 0) {
+                          return (
+                            <div style={{ padding: '12px', textAlign: 'center', color: '#aaa', fontSize: 12 }}>
+                              Aucun projet trouvé
+                            </div>
+                          );
+                        }
+                        
+                        const groupedByDept = DEPTS.map(dept => ({
+                          ...dept,
+                          projects: filteredProjects.filter(p => p.dept === dept.id)
+                        })).filter(d => d.projects.length > 0);
+                        
+                        return groupedByDept.map(dept => (
+                          <div key={dept.id}>
+                            <div style={{
+                              padding: '6px 12px',
+                              background: '#f8f8f8',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: '#666',
+                              borderTop: '1px solid #eee'
+                            }}>
+                              {dept.icon} {dept.label}
+                            </div>
+                            {dept.projects.map(p => (
+                              <div 
+                                key={p.id}
+                                style={{
+                                  padding: '8px 12px',
+                                  cursor: 'pointer',
+                                  background: form.project === p.id ? '#f0f0ff' : 'transparent',
+                                  fontSize: 13,
+                                  paddingLeft: 24
+                                }}
+                                onClick={() => {
+                                  setForm({ ...form, project: p.id, dept: p.dept });
+                                  setTaskProjectDropdownOpen(false);
+                                  setTaskProjectSearch("");
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = form.project === p.id ? '#f0f0ff' : '#fafafa'}
+                                onMouseLeave={e => e.currentTarget.style.background = form.project === p.id ? '#f0f0ff' : 'transparent'}
+                              >
+                                {p.icon || '🔥'} {p.name}
+                              </div>
+                            ))}
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  )}
+                </div>
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

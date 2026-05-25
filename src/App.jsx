@@ -245,7 +245,7 @@ export default function App() {
   const [projectCreatedStatus, setProjectCreatedStatus] = useState("all");
   const [projectPieDept, setProjectPieDept] = useState("all");
   const [projectPieStatus, setProjectPieStatus] = useState("all");
-  const [projectProgressStatusFilter, setProjectProgressStatusFilter] = useState("En cours"); // Filter for milestone progress chart
+  const [projectProgressStatusFilter, setProjectProgressStatusFilter] = useState("all"); // Filter for milestone progress chart
   const [timePeriod, setTimePeriod] = useState("daily");
   const [deptTaskPeriod, setDeptTaskPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
@@ -2532,7 +2532,8 @@ export default function App() {
                   return pms.length > 0 && hasStatus;
                 });
                 
-                if (projectsWithMilestones.length === 0) return null;
+                // Always show the chart container with filter
+                const showEmptyMessage = projectsWithMilestones.length === 0;
                 
                 // Calculate progress for each project
                 const projectProgress = projectsWithMilestones.map(p => {
@@ -2564,8 +2565,13 @@ export default function App() {
                         {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      {projectProgress.map((p) => (
+                    {showEmptyMessage ? (
+                      <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>
+                        Aucun projet avec milestones pour ce statut.
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        {projectProgress.map((p) => (
                         <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           {/* Project name - clickable */}
                           <div 
@@ -2603,8 +2609,9 @@ export default function App() {
                             {p.progress}%
                           </div>
                         </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })()}

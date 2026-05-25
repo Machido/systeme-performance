@@ -244,7 +244,8 @@ export default function App() {
   const [projectCreatedDept, setProjectCreatedDept] = useState("all");
   const [projectCreatedStatus, setProjectCreatedStatus] = useState("all");
   const [projectPieDept, setProjectPieDept] = useState("all");
-  const [projectPieStatus, setProjectPieStatus] = useState("all"); // "7", "14", "30", "all"
+  const [projectPieStatus, setProjectPieStatus] = useState("all");
+  const [projectProgressStatusFilter, setProjectProgressStatusFilter] = useState("En cours"); // Filter for milestone progress chart
   const [timePeriod, setTimePeriod] = useState("daily");
   const [deptTaskPeriod, setDeptTaskPeriod] = useState("daily");
   const [editingCell, setEditingCell] = useState(null); // {table, id, field}
@@ -2524,10 +2525,11 @@ export default function App() {
 
               {/* Project milestones progress */}
               {(() => {
-                // Get projects with milestones (En cours only)
+                // Get projects with milestones (filtered by status)
                 const projectsWithMilestones = projects.filter(p => {
                   const pms = getProjectMilestones(p.id, projectMilestones);
-                  return pms.length > 0 && p.status === "En cours";
+                  const hasStatus = projectProgressStatusFilter === "all" ? true : p.status === projectProgressStatusFilter;
+                  return pms.length > 0 && hasStatus;
                 });
                 
                 if (projectsWithMilestones.length === 0) return null;
@@ -2551,7 +2553,17 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>📊 1. Progression des projets (milestones)</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <div style={chartTitle}>📊 1. Progression des projets (milestones)</div>
+                      <select 
+                        value={projectProgressStatusFilter} 
+                        onChange={e => setProjectProgressStatusFilter(e.target.value)} 
+                        style={selectStyle}
+                      >
+                        <option value="all">Tous statuts</option>
+                        {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {projectProgress.map((p) => (
                         <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>

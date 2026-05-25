@@ -2618,10 +2618,9 @@ export default function App() {
 
               {/* Projects created over time */}
               {(() => {
-                // Filter projects
+                // Filter projects by department only
                 let filteredProjects = projects;
                 if (projectCreatedDept !== "all") filteredProjects = filteredProjects.filter(p => p.dept === projectCreatedDept);
-                if (projectCreatedStatus !== "all") filteredProjects = filteredProjects.filter(p => p.status === projectCreatedStatus);
                 
                 // Build date map (use startDate or createdDate, fallback to today)
                 const dateMap = {};
@@ -2649,16 +2648,10 @@ export default function App() {
                           ))}
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <select value={projectCreatedDept} onChange={e => setProjectCreatedDept(e.target.value)} style={selectStyle}>
-                          <option value="all">Tous départements</option>
-                          {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
-                        </select>
-                        <select value={projectCreatedStatus} onChange={e => setProjectCreatedStatus(e.target.value)} style={selectStyle}>
-                          <option value="all">Tous statuts</option>
-                          {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </div>
+                      <select value={projectCreatedDept} onChange={e => setProjectCreatedDept(e.target.value)} style={selectStyle}>
+                        <option value="all">Tous départements</option>
+                        {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                      </select>
                     </div>
                     {projectData.length < 1
                       ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas de projets à afficher.</div>

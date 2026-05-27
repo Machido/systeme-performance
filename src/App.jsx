@@ -189,6 +189,28 @@ const calculateProjectActualHours = (projectId, tasks) => {
     .reduce((sum, t) => sum + (t.passedH || 0), 0);
 };
 
+// Get tasks for a specific milestone
+const getMilestoneTasks = (milestoneId, tasks) => {
+  return tasks.filter(t => t.milestone_id === milestoneId);
+};
+
+// Get tasks for a project that have no milestone assigned
+const getUnassignedTasks = (projectId, tasks) => {
+  return tasks.filter(t => t.project === projectId && !t.milestone_id);
+};
+
+// Calculate milestone progress based on completed tasks
+const getMilestoneTaskProgress = (milestoneId, tasks) => {
+  const milestoneTasks = getMilestoneTasks(milestoneId, tasks);
+  if (milestoneTasks.length === 0) return { completed: 0, total: 0, percentage: 0 };
+  const completed = milestoneTasks.filter(t => t.status === "Terminé").length;
+  return {
+    completed,
+    total: milestoneTasks.length,
+    percentage: Math.round((completed / milestoneTasks.length) * 100)
+  };
+};
+
 export default function App() {
   const [tab, setTab] = useState("kanban");
   const [projects, setProjects] = useState(initialProjects);
@@ -3617,6 +3639,25 @@ export default function App() {
                   )}
                 </div>
 
+                <label style={s.label}>Milestone (optionnel)</label>
+                <select 
+                  style={s.select} 
+                  value={form.milestone_id || ""} 
+                  onChange={e => setForm({ ...form, milestone_id: e.target.value || null })}
+                  disabled={!form.project}
+                >
+                  <option value="">- Aucun milestone -</option>
+                  {form.project && getProjectMilestones(form.project, projectMilestones)
+                    .sort((a, b) => (a.target_date || '9999').localeCompare(b.target_date || '9999'))
+                    .map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.label} ({m.type === 'count' ? `${m.current_value || 0}/${m.target_value}` : 
+                                   m.type === 'currency' ? `${m.current_value || 0}€/${m.target_value}€` :
+                                   `${m.current_value || 0}${m.unit || ''}/${m.target_value}${m.unit || ''}`})
+                      </option>
+                    ))}
+                </select>
+
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Département</label>
@@ -4101,6 +4142,92 @@ export default function App() {
                     </div>
                   )}
                 </div>
+
+                {/* Tasks grouped by milestones */}
+                {form.id && (() => {
+                  const projectTasks = tasks.filter(t => t.project === form.id);
+                  const unassignedTasks = getUnassignedTasks(form.id, tasks);
+                  const projectMs = getProjectMilestones(form.id, projectMilestones);
+                  
+                  if (projectTasks.length === 0) return null;
+                  
+                  return (
+                    <div style={{ border: "1px solid #e8e8e8", borderRadius: 8, padding: 16, marginBottom: 16, background: "#fafafa" }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#444", marginBottom: 12 }}>
+                        📋 Tâches du projet ({projectTasks.filter(t => t.status === "Terminé").length}/{projectTasks.length})
+                      </div>
+                      
+                      {/* Tasks by milestone */}
+                      {projectMs.length > 0 && projectMs.map(m => {
+                        const milestoneTasks = getMilestoneTasks(m.id, tasks);
+                        if (milestoneTasks.length === 0) return null;
+                        
+                        const taskProgress = getMilestoneTaskProgress(m.id, tasks);
+                        
+                        return (
+                          <div key={m.id} style={{ marginBottom: 12 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: "#5b4ef8", marginBottom: 6 }}>
+                              🎯 {m.label} (Tâches: {taskProgress.completed}/{taskProgress.total} = {taskProgress.percentage}%)
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingLeft: 12 }}>
+                              {milestoneTasks.map(t => (
+                                <div 
+                                  key={t.id} 
+                                  style={{ 
+                                    fontSize: 11, 
+                                    color: t.status === "Terminé" ? "#888" : "#333",
+                                    textDecoration: t.status === "Terminé" ? "line-through" : "none",
+                                    cursor: "pointer",
+                                    padding: "4px 8px",
+                                    borderRadius: 4,
+                                    background: "#fff",
+                                    border: "1px solid #e8e8e8"
+                                  }}
+                                  onClick={() => openModal("task", t)}
+                                >
+                                  {STATUS_ICONS[t.status]} {t.name} {t.priority === "Haute" ? "🔥" : ""} {t.due ? `(⏰ ${t.due})` : ""}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {/* Unassigned tasks */}
+                      {unassignedTasks.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#888", marginBottom: 6, marginTop: 12 }}>
+                            ⬜ Tâches non assignées ({unassignedTasks.length})
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4, paddingLeft: 12 }}>
+                            {unassignedTasks.map(t => (
+                              <div 
+                                key={t.id} 
+                                style={{ 
+                                  fontSize: 11, 
+                                  color: t.status === "Terminé" ? "#888" : "#333",
+                                  textDecoration: t.status === "Terminé" ? "line-through" : "none",
+                                  cursor: "pointer",
+                                  padding: "4px 8px",
+                                  borderRadius: 4,
+                                  background: "#fff",
+                                  border: "1px solid #e8e8e8"
+                                }}
+                                onClick={() => openModal("task", t)}
+                              >
+                                {STATUS_ICONS[t.status]} {t.name} {t.priority === "Haute" ? "🔥" : ""} {t.due ? `(⏰ ${t.due})` : ""}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div style={{ fontSize: 10, color: "#aaa", marginTop: 12, fontStyle: "italic" }}>
+                        💡 Astuce: Utilisez le dropdown "Milestone" dans le modal tâche pour assigner une tâche à un milestone
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <label style={s.label}>Notes</label>
                 <textarea style={{ ...s.input, resize: "vertical", minHeight: 60 }} value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Contexte, blocages, prochaines étapes..." />

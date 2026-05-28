@@ -662,6 +662,10 @@ export default function App() {
 
   const saveProject = () => {
     if (!form.name) return;
+    if (!form.dept) {
+      alert("⚠️ Le département est obligatoire. Veuillez choisir un département avant de sauvegarder.");
+      return;
+    }
     let updated, record;
     if (form.id) {
       record = { ...projects.find(p => p.id === form.id), ...form };
@@ -3792,10 +3796,19 @@ export default function App() {
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
-                    <label style={s.label}>Département</label>
-                    <select style={s.select} value={form.dept || "ops"} onChange={e => setForm({ ...form, dept: e.target.value })}>
+                    <label style={s.label}>Département *</label>
+                    <select 
+                      style={{
+                        ...s.select,
+                        borderColor: !form.dept ? '#E85555' : '#ddd'
+                      }} 
+                      value={form.dept || ""} 
+                      onChange={e => setForm({ ...form, dept: e.target.value })}
+                    >
+                      <option value="">(Sélectionnez un département)</option>
                       {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
                     </select>
+                    {!form.dept && <div style={{ color: '#E85555', fontSize: 11, marginTop: 4 }}>⚠️ Obligatoire</div>}
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Statut</label>

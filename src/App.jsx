@@ -3594,12 +3594,19 @@ export default function App() {
                           );
                         }
                         
+                        // Group projects by department
                         const groupedByDept = DEPTS.map(dept => ({
                           ...dept,
                           projects: filteredProjects.filter(p => p.dept === dept.id)
                         })).filter(d => d.projects.length > 0);
                         
-                        return groupedByDept.map(dept => (
+                        // Projects without valid department
+                        const deptIds = DEPTS.map(d => d.id);
+                        const projectsWithoutDept = filteredProjects.filter(p => !p.dept || !deptIds.includes(p.dept));
+                        
+                        return (
+                          <>
+                            {groupedByDept.map(dept => (
                           <div key={dept.id}>
                             <div style={{
                               padding: '6px 12px',
@@ -3633,7 +3640,46 @@ export default function App() {
                               </div>
                             ))}
                           </div>
-                        ));
+                            ))}
+                            
+                            {/* Projects without valid department */}
+                            {projectsWithoutDept.length > 0 && (
+                              <div>
+                                <div style={{
+                                  padding: '6px 12px',
+                                  background: '#f8f8f8',
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: '#666',
+                                  borderTop: '1px solid #eee'
+                                }}>
+                                  📎 Autres
+                                </div>
+                                {projectsWithoutDept.map(p => (
+                                  <div 
+                                    key={p.id}
+                                    style={{
+                                      padding: '8px 12px',
+                                      cursor: 'pointer',
+                                      background: form.project === p.id ? '#f0f0ff' : 'transparent',
+                                      fontSize: 13,
+                                      paddingLeft: 24
+                                    }}
+                                    onClick={() => {
+                                      setForm({ ...form, project: p.id, dept: p.dept || 'ops' });
+                                      setTaskProjectDropdownOpen(false);
+                                      setTaskProjectSearch("");
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = form.project === p.id ? '#f0f0ff' : '#fafafa'}
+                                    onMouseLeave={e => e.currentTarget.style.background = form.project === p.id ? '#f0f0ff' : 'transparent'}
+                                  >
+                                    {p.icon || '🔥'} {p.name}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        );
                       })()}
                     </div>
                   )}

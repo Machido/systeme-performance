@@ -308,6 +308,7 @@ export default function App() {
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [quickLogHabit, setQuickLogHabit] = useState(null);
   const [visibleHabits, setVisibleHabits] = useState({});
+  const [habitFocusFilter, setHabitFocusFilter] = useState(true); // true = focus only, false = all
 
   // ── LOAD from Supabase on mount ──
   useEffect(() => {
@@ -1673,7 +1674,12 @@ export default function App() {
         {/* ── HABITUDES ── */}
         {tab === "habits" && (() => {
           const activeHabits = habits.filter(h => !h.archived);
-          const filteredHabits = habitDeptFilter === "all" ? activeHabits : activeHabits.filter(h => h.department_id === habitDeptFilter);
+          let filteredHabits = habitDeptFilter === "all" ? activeHabits : activeHabits.filter(h => h.department_id === habitDeptFilter);
+          
+          // Filter by focus
+          if (habitFocusFilter) {
+            filteredHabits = filteredHabits.filter(h => h.focus !== false);
+          }
 
           // Group by department
           const habitsByDept = DEPTS.map(dept => ({
@@ -1701,15 +1707,43 @@ export default function App() {
                 }}>+ Nouvelle habitude</button>
               </div>
 
-              {/* Department filter (top) */}
-              <div style={{ marginBottom: 16, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <span style={{ fontSize: 12, color: "#aaa" }}>Département:</span>
-                <button style={s.deptBtn(habitDeptFilter === "all")} onClick={() => setHabitDeptFilter("all")}>Tous</button>
-                {DEPTS.map(d => (
-                  <button key={d.id} style={s.deptBtn(habitDeptFilter === d.id)} onClick={() => setHabitDeptFilter(d.id)}>
-                    {d.icon} {d.label}
+              {/* Filters (top) */}
+              <div style={{ marginBottom: 16 }}>
+                {/* Department filter */}
+                <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "#aaa" }}>Département:</span>
+                  <button style={s.deptBtn(habitDeptFilter === "all")} onClick={() => setHabitDeptFilter("all")}>Tous</button>
+                  {DEPTS.map(d => (
+                    <button key={d.id} style={s.deptBtn(habitDeptFilter === d.id)} onClick={() => setHabitDeptFilter(d.id)}>
+                      {d.icon} {d.label}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Focus filter */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "#aaa" }}>Affichage:</span>
+                  <button 
+                    style={{
+                      ...s.btn(habitFocusFilter ? "primary" : "ghost"),
+                      fontSize: 12,
+                      padding: "6px 12px"
+                    }} 
+                    onClick={() => setHabitFocusFilter(true)}
+                  >
+                    🔥 Focus uniquement
                   </button>
-                ))}
+                  <button 
+                    style={{
+                      ...s.btn(!habitFocusFilter ? "primary" : "ghost"),
+                      fontSize: 12,
+                      padding: "6px 12px"
+                    }} 
+                    onClick={() => setHabitFocusFilter(false)}
+                  >
+                    Tout
+                  </button>
+                </div>
               </div>
 
               {/* Today's Quick Dashboard */}
@@ -1740,7 +1774,7 @@ export default function App() {
                           fontSize: 13,
                         }}>
                         <span style={{ color: logged ? "#6BBF6B" : failed ? "#E85555" : "#222", fontWeight: logged || failed ? 600 : 400 }}>
-                          {habit.icon} {habit.name} {logged && `×${todaySuccessCount}`} {failed && `❌×${todayFailCount}`}
+                          {habit.icon} {habit.name} {habit.focus !== false && "🔥"} {logged && `×${todaySuccessCount}`} {failed && `❌×${todayFailCount}`}
                         </span>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button
@@ -1817,7 +1851,7 @@ export default function App() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                           <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
                             <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                              {habit.icon} {habit.name} {typeIcon}
+                              {habit.icon} {habit.name} {typeIcon} {habit.focus !== false && "🔥"}
                               <span style={{ marginLeft: 8, opacity: 0.4, fontSize: 13 }}>{getDeptIcon(habit.department_id)}</span>
                               {habit.project_id && (
                                 <span style={{ fontSize: 11, color: "#888", fontWeight: 400, marginLeft: 8 }}>
@@ -1984,7 +2018,7 @@ export default function App() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                           <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedHabit(habit)}>
                             <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>
-                              {habit.icon} {habit.name} {typeIcon}
+                              {habit.icon} {habit.name} {typeIcon} {habit.focus !== false && "🔥"}
                               <span style={{ marginLeft: 8, opacity: 0.4, fontSize: 13 }}>{getDeptIcon(habit.department_id)}</span>
                               {habit.project_id && (
                                 <span style={{ fontSize: 11, color: "#888", fontWeight: 400, marginLeft: 8 }}>
@@ -4548,6 +4582,18 @@ export default function App() {
                     <label style={s.label}>Manqués autorisés</label>
                     <input type="number" style={s.input} value={form.allowed_misses || 0} onChange={e => setForm({ ...form, allowed_misses: parseInt(e.target.value) || 0 })} />
                   </div>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input 
+                      type="checkbox" 
+                      checked={form.focus !== false}
+                      onChange={e => setForm({ ...form, focus: e.target.checked })}
+                      style={{ width: 16, height: 16, cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: 14 }}>🔥 Focus (afficher par défaut)</span>
+                  </label>
                 </div>
 
                 <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>

@@ -667,13 +667,24 @@ export default function App() {
       alert("⚠️ Le département est obligatoire. Veuillez choisir un département avant de sauvegarder.");
       return;
     }
+    
+    // Auto-fill abandonedDate if status changed to Abandonné and date is empty
+    let formData = { ...form };
+    if (formData.status === "Abandonné" && !formData.abandonedDate) {
+      formData.abandonedDate = todayStr;
+    }
+    // Auto-fill completedDate if status changed to Terminé and date is empty
+    if (formData.status === "Terminé" && !formData.completedDate) {
+      formData.completedDate = todayStr;
+    }
+    
     let updated, record;
-    if (form.id) {
-      record = { ...projects.find(p => p.id === form.id), ...form };
-      updated = projects.map(p => p.id === form.id ? record : p);
+    if (formData.id) {
+      record = { ...projects.find(p => p.id === formData.id), ...formData };
+      updated = projects.map(p => p.id === formData.id ? record : p);
     } else {
       const id = "P" + Date.now();
-      record = { ...form, id, createdDate: todayStr };
+      record = { ...formData, id, createdDate: todayStr };
       updated = [...projects, record];
     }
     updateProjects(updated);
@@ -3944,11 +3955,23 @@ export default function App() {
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 16 }}>
-                  <label style={s.label}>Date de complétion actuelle</label>
-                  <input type="date" style={s.input} value={form.completedDate || ""} onChange={e => setForm({ ...form, completedDate: e.target.value })} />
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Remplir quand le projet est terminé</div>
-                </div>
+                {/* Date de complétion - only if status = Terminé */}
+                {form.status === "Terminé" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={s.label}>Date de complétion 🎉</label>
+                    <input type="date" style={s.input} value={form.completedDate || ""} onChange={e => setForm({ ...form, completedDate: e.target.value })} />
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Date à laquelle le projet a été terminé</div>
+                  </div>
+                )}
+
+                {/* Date d'abandon - only if status = Abandonné */}
+                {form.status === "Abandonné" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={s.label}>Date d'abandon 🗑️</label>
+                    <input type="date" style={s.input} value={form.abandonedDate || ""} onChange={e => setForm({ ...form, abandonedDate: e.target.value })} />
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Date à laquelle le projet a été abandonné</div>
+                  </div>
+                )}
 
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>

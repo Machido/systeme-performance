@@ -4,9 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarCha
 
 const DEPTS = [
   { id: "ops", label: "Opérations", icon: "⚙️", color: "#4A90D9" },
-  { id: "sales", label: "Ventes & Marketing", icon: "📈", color: "#E8A838" },
-  { id: "prod", label: "Production", icon: "🏭", color: "#6BBF6B" },
-  { id: "res", label: "Résilience", icon: "🌱", color: "#B07FE8" },
+  { id: "sales", label: "Revenu", icon: "💰", color: "#E8A838" },
+  { id: "prod", label: "Friends & Family", icon: "👥", color: "#6BBF6B" },
+  { id: "res", label: "Santé & Bien-être", icon: "🌿", color: "#B07FE8" },
 ];
 
 const STATUSES = ["À faire", "En cours", "Terminé", "Abandonné"];

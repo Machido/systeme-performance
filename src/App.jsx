@@ -868,6 +868,37 @@ export default function App() {
       return;
     }
 
+    // Build filter description for footer
+    const filterParts = [];
+    
+    // Department filter
+    if (projectDeptFilter !== "all") {
+      const dept = DEPTS.find(d => d.id === projectDeptFilter);
+      filterParts.push(`D\u00e9partement: ${dept ? dept.icon + ' ' + dept.label : projectDeptFilter}`);
+    }
+    
+    // Focus filter
+    if (projectFocusOnly) {
+      filterParts.push("Focus uniquement \ud83d\udd25");
+    }
+    
+    // Status filter
+    const statusLabels = [];
+    if (projectShowPotentiel) statusLabels.push("Potentiel");
+    if (projectShowEnCours) statusLabels.push("En cours");
+    if (projectShowTermine) statusLabels.push("Termin\u00e9");
+    if (projectShowAbandonne) statusLabels.push("Abandonn\u00e9");
+    if (statusLabels.length > 0 && statusLabels.length < 4) {
+      filterParts.push(`Statut: ${statusLabels.join(", ")}`);
+    }
+    
+    // Search filter
+    if (projectSearch.trim()) {
+      filterParts.push(`Recherche: "${projectSearch.trim()}"`);
+    }
+    
+    const filterStr = filterParts.length > 0 ? filterParts.join(" \u2022 ") : "Tous les projets";
+
     const printWindow = window.open('', '_blank');
     const now = new Date();
     const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -941,12 +972,22 @@ export default function App() {
       text-decoration: line-through;
     }
     .footer {
-      margin-top: 40px;
-      padding-top: 16px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 1.5cm;
       border-top: 1px solid #ddd;
       font-size: 8pt;
       color: #888;
       text-align: center;
+      background: white;
+    }
+    @media print {
+      .footer {
+        position: fixed;
+        bottom: 0;
+      }
     }
   </style>
 </head>
@@ -1035,7 +1076,11 @@ export default function App() {
     });
 
     html += `
-  <div class="footer">Système Performance - Imprimé le ${dateStr} à ${timeStr}</div>
+  <div class="footer">
+    <div style="font-weight: 600; margin-bottom: 4px;">Système Performance</div>
+    <div>Imprimé le ${dateStr} à ${timeStr}</div>
+    <div style="margin-top: 4px; font-style: italic;">Filtre: ${filterStr}</div>
+  </div>
 </body>
 </html>
 `;

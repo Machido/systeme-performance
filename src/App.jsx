@@ -2345,7 +2345,7 @@ export default function App() {
               <div style={{ ...chartCard, display: "flex", alignItems: "center", gap: 20, padding: "18px 24px", marginBottom: 16 }}>
                 <div style={{ fontSize: 48 }}>{avgScoreEmoji}</div>
                 <div>
-                  <div style={chartTitle}>Score de satisfaction</div>
+                  <div style={chartTitle}>📊 1. Score de satisfaction</div>
                   <div style={{ fontSize: 32, fontWeight: 800, color: "#5b4ef8" }}>{avgScoreRounded !== null ? `${avgScoreRounded}/10` : "-"}</div>
                   <div style={{ fontSize: 12, color: "#aaa" }}>{tempLine.length} entrée{tempLine.length > 1 ? "s" : ""} journal</div>
                 </div>
@@ -2385,7 +2385,7 @@ export default function App() {
                   <div style={{ ...chartCard, marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={chartTitle}>Vélocité - Tâches créées vs complétées</div>
+                        <div style={chartTitle}>📈 2. Vélocité - Tâches créées vs complétées</div>
                         <div style={{ display: "flex", gap: 4 }}>
                           {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                             <button key={k} style={toggleStyle(veloPeriod === k)} onClick={() => setVeloPeriod(k)}>{l}</button>
@@ -2446,7 +2446,7 @@ export default function App() {
                       <div style={{ ...chartCard, marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={chartTitle}>Tendance satisfaction 💀 → 🚀</div>
+                            <div style={chartTitle}>📉 3. Tendance satisfaction 💀 → 🚀</div>
                             <div style={{ display: "flex", gap: 4 }}>
                               {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                                 <button key={k} style={toggleStyle2(satPeriod === k)} onClick={() => setSatPeriod(k)}>{l}</button>
@@ -2557,7 +2557,7 @@ export default function App() {
                       <div style={{ ...chartCard, marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={chartTitle}>🎯 Suivi des habitudes</div>
+                            <div style={chartTitle}>🎯 4. Suivi des habitudes</div>
                             <div style={{ display: "flex", gap: 4 }}>
                               {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                                 <button key={k} style={toggleStyle(habitPeriod === k)} onClick={() => setHabitPeriod(k)}>{l}</button>
@@ -2671,7 +2671,7 @@ export default function App() {
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <div style={chartTitle}>📊 1. Progression des projets (milestones)</div>
+                      <div style={chartTitle}>📊 5. Progression des projets (milestones)</div>
                       <select 
                         value={projectProgressStatusFilter} 
                         onChange={e => setProjectProgressStatusFilter(e.target.value)} 
@@ -2757,7 +2757,7 @@ export default function App() {
                   <div style={{ ...chartCard, marginBottom: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={chartTitle}>📈 2. Projets créés au fil du temps</div>
+                        <div style={chartTitle}>📈 6. Projets créés au fil du temps</div>
                         <div style={{ display: "flex", gap: 4 }}>
                           {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                             <button key={k} style={toggleStyle(projectCreatedPeriod === k)} onClick={() => setProjectCreatedPeriod(k)}>{l}</button>
@@ -2802,7 +2802,7 @@ export default function App() {
                   return (
                     <div style={chartCard}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                        <div style={chartTitle}>🥧 3. Projets par département</div>
+                        <div style={chartTitle}>🥧 7. Projets par département</div>
                         <select value={projectPieDept} onChange={e => setProjectPieDept(e.target.value)} style={selectStyle}>
                           <option value="all">Tous statuts</option>
                           {PROJECT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -2836,7 +2836,7 @@ export default function App() {
                   return (
                     <div style={chartCard}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                        <div style={chartTitle}>🥧 4. Projets par statut</div>
+                        <div style={chartTitle}>🥧 8. Projets par statut</div>
                         <select value={projectPieStatus} onChange={e => setProjectPieStatus(e.target.value)} style={selectStyle}>
                           <option value="all">Tous depts</option>
                           {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
@@ -2885,7 +2885,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>📊 5. Statuts projets (tous les temps)</div>
+                    <div style={chartTitle}>📊 9. Statuts projets (tous les temps)</div>
                     
                     {/* Summary stats */}
                     <div style={{ 
@@ -2958,7 +2958,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>📉 6. Projets abandonnés par mois</div>
+                    <div style={chartTitle}>📉 10. Projets abandonnés par mois</div>
                     <ResponsiveContainer width="100%" height={200}>
                       <LineChart data={monthData}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -2993,7 +2993,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>🤔 7. Raisons d'abandon ({abandonedWithReason.length} projets)</div>
+                    <div style={chartTitle}>🤔 11. Raisons d'abandon ({abandonedWithReason.length} projets)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {reasonData.map(r => (
                         <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -3057,7 +3057,7 @@ export default function App() {
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
-                    <div style={chartTitle}>⏱️ 8. Heures réelles vs estimées (projets terminés)</div>
+                    <div style={chartTitle}>⏱️ 12. Heures réelles vs estimées (projets terminés)</div>
                     
                     {/* Overall summary */}
                     <div style={{ 
@@ -3172,7 +3172,7 @@ export default function App() {
 
                 {/* Completion dial */}
                 <div style={chartCard}>
-                  <div style={chartTitle}>Taux de complétion</div>
+                  <div style={chartTitle}>🎯 13. Taux de complétion</div>
                   <div style={{ position: "relative", height: 160 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RadialBarChart cx="50%" cy="80%" innerRadius="70%" outerRadius="100%" startAngle={180} endAngle={0} data={[{ value: 100, fill: "#f0f0f0" }, { value: completion, fill: "#5b4ef8" }]}>
@@ -3188,7 +3188,7 @@ export default function App() {
 
                 {/* Pie: task breakdown */}
                 <div style={chartCard}>
-                  <div style={chartTitle}>Répartition des tâches</div>
+                  <div style={chartTitle}>📄 14. Répartition des tâches</div>
                   <div style={{ height: 160, display: "flex", alignItems: "center", gap: 12 }}>
                     <ResponsiveContainer width="60%" height="100%">
                       <PieChart>
@@ -3212,7 +3212,7 @@ export default function App() {
 
                 {/* System state */}
                 <div style={chartCard}>
-                  <div style={chartTitle}>État du système</div>
+                  <div style={chartTitle}>⚙️ 15. État du système</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
                     {[
                       ["Projets actifs", fp.filter(p => p.status === "En cours").length, "#4A90D9"],
@@ -3232,7 +3232,7 @@ export default function App() {
               {/* Row 2: Tasks by dept grouped bar */}
               <div style={{ ...chartCard, marginTop: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div style={chartTitle}>Tâches par département</div>
+                  <div style={chartTitle}>🏛️ 16. Tâches par département</div>
                   <div style={{ display: "flex", gap: 4 }}>
                     {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                       <button key={k} style={toggleStyle(deptTaskPeriod === k)} onClick={() => setDeptTaskPeriod(k)}>{l}</button>
@@ -3256,7 +3256,7 @@ export default function App() {
               {/* Row 3: Hours estimated vs actual */}
               <div style={{ ...chartCard, marginTop: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div style={chartTitle}>Heures estimées vs passées par département</div>
+                  <div style={chartTitle}>⏱️ 17. Heures estimées vs passées par département</div>
                   <div style={{ display: "flex", gap: 4 }}>
                     {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                       <button key={k} style={toggleStyle(timePeriod === k)} onClick={() => setTimePeriod(k)}>{l}</button>

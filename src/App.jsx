@@ -3027,9 +3027,9 @@ export default function App() {
                 if (completedProjects.length === 0) return null;
                 
                 const projectHoursData = completedProjects.map(p => {
-                  const actualHours = calculateProjectActualHours(p.id, tasks);
-                  const estHours = p.estHours || 0;
-                  const diff = actualHours - estHours;
+                  const actualHours = parseFloat(calculateProjectActualHours(p.id, tasks).toFixed(2));
+                  const estHours = parseFloat((p.estHours || 0).toFixed(2));
+                  const diff = parseFloat((actualHours - estHours).toFixed(2));
                   const deptData = DEPTS.find(d => d.id === p.dept);
                   
                   return {
@@ -3050,9 +3050,9 @@ export default function App() {
                 projectHoursData.sort((a, b) => b.diff - a.diff);
                 
                 // Calculate overall stats
-                const totalEst = projectHoursData.reduce((sum, p) => sum + p.estHours, 0);
-                const totalActual = projectHoursData.reduce((sum, p) => sum + p.actualHours, 0);
-                const totalDiff = totalActual - totalEst;
+                const totalEst = parseFloat(projectHoursData.reduce((sum, p) => sum + p.estHours, 0).toFixed(2));
+                const totalActual = parseFloat(projectHoursData.reduce((sum, p) => sum + p.actualHours, 0).toFixed(2));
+                const totalDiff = parseFloat((totalActual - totalEst).toFixed(2));
                 const totalDiffPercent = totalEst > 0 ? Math.round((totalDiff / totalEst) * 100) : 0;
                 
                 return (

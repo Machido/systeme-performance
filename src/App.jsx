@@ -3199,13 +3199,46 @@ export default function App() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div style={{ flex: 1, fontSize: 11 }}>
-                      {pieData.map(d => (
-                        <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
-                          <span style={{ color: "#666" }}>{d.name}</span>
-                          <span style={{ marginLeft: "auto", fontWeight: 600, color: "#222" }}>{d.value}</span>
-                        </div>
-                      ))}
+                      {pieData.map(d => {
+                        const handleClick = () => {
+                          // Map pie slice names to status filter values
+                          const statusMap = {
+                            "Terminé": "Terminé",
+                            "En cours": "En cours",
+                            "À faire": "À faire",
+                            "En retard": "overdue" // Special filter for overdue tasks
+                          };
+                          const filterValue = statusMap[d.name];
+                          if (filterValue) {
+                            setStatusFilter(filterValue);
+                            setTab("kanban"); // Switch to Kanban tab
+                          }
+                        };
+                        
+                        return (
+                          <div 
+                            key={d.name} 
+                            style={{ 
+                              display: "flex", 
+                              alignItems: "center", 
+                              gap: 6, 
+                              marginBottom: 6,
+                              cursor: "pointer",
+                              padding: "4px 6px",
+                              borderRadius: 4,
+                              transition: "background 0.2s"
+                            }}
+                            onClick={handleClick}
+                            onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                            title={`Cliquez pour afficher les tâches "${d.name}"`}
+                          >
+                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
+                            <span style={{ color: "#666" }}>{d.name}</span>
+                            <span style={{ marginLeft: "auto", fontWeight: 600, color: "#222" }}>{d.value}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

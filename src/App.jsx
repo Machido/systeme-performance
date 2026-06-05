@@ -258,6 +258,9 @@ export default function App() {
   const [veloProject, setVeloProject] = useState("all");
   const [veloPeriod, setVeloPeriod] = useState("daily");
   const [veloDateRange, setVeloDateRange] = useState("30"); // "7", "14", "30", "all"
+  const [veloShowCreated, setVeloShowCreated] = useState(true);
+  const [veloShowCompleted, setVeloShowCompleted] = useState(true);
+  const [veloShowAbandoned, setVeloShowAbandoned] = useState(false);
   const [satPeriod, setSatPeriod] = useState("daily");
   const [satDateRange, setSatDateRange] = useState("30"); // "7", "14", "30", "all"
   const [habitPeriod, setHabitPeriod] = useState("daily");
@@ -2362,10 +2365,13 @@ export default function App() {
                 const dateMap = {};
                 vTasks.forEach(t => {
                   const cd = getCreatedDate(t);
-                  if (cd) { dateMap[cd] = dateMap[cd] || { date: cd, created: 0, completed: 0 }; dateMap[cd].created++; }
+                  if (cd) { dateMap[cd] = dateMap[cd] || { date: cd, created: 0, completed: 0, abandoned: 0 }; dateMap[cd].created++; }
                   // Use completedDate, or fallback to due/today for completed tasks
                   const doneDate = t.status === "Terminé" ? (t.completedDate || t.due || todayStr) : t.completedDate;
-                  if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0 }; dateMap[doneDate].completed++; }
+                  if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0, abandoned: 0 }; dateMap[doneDate].completed++; }
+                  // Use abandoneddate for abandoned tasks
+                  const abandonDate = t.status === "Abandonné" ? (t.abandoneddate || todayStr) : t.abandoneddate;
+                  if (abandonDate) { dateMap[abandonDate] = dateMap[abandonDate] || { date: abandonDate, created: 0, completed: 0, abandoned: 0 }; dateMap[abandonDate].abandoned++; }
                 });
                 let veloDataRaw = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
                 
@@ -2378,7 +2384,7 @@ export default function App() {
                   veloDataRaw = veloDataRaw.filter(d => d.date >= cutoffStr);
                 }
                 
-                const veloData = aggregateByPeriod(veloDataRaw, veloPeriod, ["created", "completed"], "sum");
+                const veloData = aggregateByPeriod(veloDataRaw, veloPeriod, ["created", "completed", "abandoned"], "sum");
                 const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
                 const toggleStyle = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
                 return (<>
@@ -2392,7 +2398,7 @@ export default function App() {
                           ))}
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                         {veloPeriod === "daily" && (
                           <select value={veloDateRange} onChange={e => setVeloDateRange(e.target.value)} style={selectStyle}>
                             <option value="7">7 derniers jours</option>
@@ -2409,6 +2415,37 @@ export default function App() {
                           <option value="all">Tous projets</option>
                           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
+                        
+                        {/* Statuts checkboxes */}
+                        <div style={{ display: "flex", gap: 8, marginLeft: 8, paddingLeft: 8, borderLeft: "1px solid #e0e0e0" }}>
+                          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, cursor: "pointer" }}>
+                            <input 
+                              type="checkbox" 
+                              checked={veloShowCreated}
+                              onChange={e => setVeloShowCreated(e.target.checked)}
+                              style={{ cursor: "pointer" }}
+                            />
+                            Créées
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, cursor: "pointer" }}>
+                            <input 
+                              type="checkbox" 
+                              checked={veloShowCompleted}
+                              onChange={e => setVeloShowCompleted(e.target.checked)}
+                              style={{ cursor: "pointer" }}
+                            />
+                            Complétées
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, cursor: "pointer" }}>
+                            <input 
+                              type="checkbox" 
+                              checked={veloShowAbandoned}
+                              onChange={e => setVeloShowAbandoned(e.target.checked)}
+                              style={{ cursor: "pointer" }}
+                            />
+                            Abandonnées
+                          </label>
+                        </div>
                       </div>
                     </div>
                     {veloData.length < 1
@@ -2420,8 +2457,9 @@ export default function App() {
                           <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
                           <Tooltip />
                           <Legend />
-                          <Line type="monotone" dataKey="created" name="Créées" stroke="#4A90D9" strokeWidth={2.5} dot={{ fill: "#4A90D9", r: 4 }} />
-                          <Line type="monotone" dataKey="completed" name="Complétées" stroke="#6BBF6B" strokeWidth={2.5} dot={{ fill: "#6BBF6B", r: 4 }} />
+                          {veloShowCreated && <Line type="monotone" dataKey="created" name="Créées" stroke="#4A90D9" strokeWidth={2.5} dot={{ fill: "#4A90D9", r: 4 }} />}
+                          {veloShowCompleted && <Line type="monotone" dataKey="completed" name="Complétées" stroke="#6BBF6B" strokeWidth={2.5} dot={{ fill: "#6BBF6B", r: 4 }} />}
+                          {veloShowAbandoned && <Line type="monotone" dataKey="abandoned" name="Abandonnées" stroke="#E85555" strokeWidth={2.5} dot={{ fill: "#E85555", r: 4 }} />}
                         </LineChart>
                       </ResponsiveContainer>
                     }

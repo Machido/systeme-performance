@@ -597,13 +597,14 @@ export default function App() {
     if (!form.name) return;
 
     // Auto-correct: if project is a name instead of ID, find the matching project
-    if (form.project && !form.project.startsWith('P')) {
+    if (form.project && form.project !== "" && !form.project.startsWith('P')) {
       const matchedProject = projects.find(p => p.name === form.project);
       if (matchedProject) {
         form.project = matchedProject.id; // Auto-convert name to ID
       } else {
-        alert(`Projet introuvable: "${form.project}". Veuillez sélectionner un projet valide.`);
-        return;
+        // If no match found, clear the invalid project instead of blocking
+        console.warn(`Projet invalide "${form.project}" supprimé. Sélectionnez un nouveau projet.`);
+        form.project = null; // Clear invalid project
       }
     }
 

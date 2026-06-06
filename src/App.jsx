@@ -2533,7 +2533,7 @@ export default function App() {
                     // Initialize visibleHabits if needed (on first render of this section)
                     if (habitNames.length > 0 && Object.keys(visibleHabits).length === 0) {
                       const initial = {};
-                      habitNames.forEach(name => { initial[name] = true; });
+                      habitNames.forEach(name => { initial[name] = false; }); // Default: all unchecked
                       setVisibleHabits(initial);
                     }
 

@@ -87,6 +87,15 @@ const getLocalDateTimeStr = (date = new Date()) => {
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
 
+// Extract date from timestamp in LOCAL timezone (not UTC)
+const getLocalDateFromTimestamp = (timestamp) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 // Parse date string and treat as local (not UTC)
 const parseLocalDate = (dateStr) => {
   if (!dateStr) return null;
@@ -504,7 +513,7 @@ export default function App() {
   const quickLogHabitForDate = async (habitId, dateStr, completed) => {
     // Check if log already exists for this date
     const existingLog = habitLogs.find(l => {
-      const logDate = new Date(l.logged_at).toISOString().split("T")[0];
+      const logDate = getLocalDateFromTimestamp(l.logged_at);
       return l.habit_id === habitId && logDate === dateStr && l.completed === completed;
     });
 
@@ -1752,7 +1761,7 @@ export default function App() {
           // Today's habits for quick dashboard
           const todayStr = new Date().toISOString().split("T")[0];
           const todayLogs = habitLogs.filter(l => {
-            const logDate = new Date(l.logged_at).toISOString().split("T")[0];
+            const logDate = getLocalDateFromTimestamp(l.logged_at);
             return logDate === todayStr;
           });
           const todayComplete = todayLogs.filter(l => l.completed).length;

@@ -3921,11 +3921,32 @@ export default function App() {
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Heures estimées</label>
-                    <input type="number" step="0.5" style={s.input} value={form.estH || ""} onChange={e => setForm({ ...form, estH: parseFloat(e.target.value) })} />
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      style={s.input} 
+                      value={form.estH ?? ""} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        setForm({ ...form, estH: val === "" ? null : parseFloat(val) || 0 });
+                      }} 
+                    />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Heures passées</label>
-                    <input type="number" step="0.5" style={s.input} value={form.passedH || ""} onChange={e => setForm({ ...form, passedH: parseFloat(e.target.value) })} />
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      style={s.input} 
+                      value={form.passedH ?? ""} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        // Allow empty string during typing, otherwise parse
+                        setForm({ ...form, passedH: val === "" ? null : parseFloat(val) || 0 });
+                      }} 
+                    />
                   </div>
                 </div>
 
@@ -4057,7 +4078,17 @@ export default function App() {
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Heures estimées</label>
-                    <input type="number" step="1" style={s.input} value={form.estHours || ""} onChange={e => setForm({ ...form, estHours: parseFloat(e.target.value) })} />
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      style={s.input} 
+                      value={form.estHours ?? ""} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        setForm({ ...form, estHours: val === "" ? null : parseFloat(val) || 0 });
+                      }} 
+                    />
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={s.label}>Revenu lié (€)</label>

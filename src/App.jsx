@@ -3923,7 +3923,7 @@ export default function App() {
                     <label style={s.label}>Heures estimées</label>
                     <input 
                       type="number" 
-                      step="0.01" 
+                      step="0.1" 
                       min="0" 
                       style={s.input} 
                       value={form.estH ?? ""} 
@@ -3937,7 +3937,7 @@ export default function App() {
                     <label style={s.label}>Heures passées</label>
                     <input 
                       type="number" 
-                      step="0.01" 
+                      step="0.1" 
                       min="0" 
                       style={s.input} 
                       value={form.passedH ?? ""} 
@@ -4080,7 +4080,7 @@ export default function App() {
                     <label style={s.label}>Heures estimées</label>
                     <input 
                       type="number" 
-                      step="0.01" 
+                      step="0.1" 
                       min="0" 
                       style={s.input} 
                       value={form.estHours ?? ""} 

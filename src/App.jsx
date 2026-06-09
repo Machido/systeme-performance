@@ -275,6 +275,9 @@ export default function App() {
   const [habitPeriod, setHabitPeriod] = useState("daily");
   const [habitDateRange, setHabitDateRange] = useState("30");
   const [projectCreatedPeriod, setProjectCreatedPeriod] = useState("monthly");
+  const [projectShowCreated, setProjectShowCreated] = useState(true);
+  const [projectShowCompleted, setProjectShowCompleted] = useState(false);
+  const [projectShowAbandoned, setProjectShowAbandoned] = useState(false);
   const [projectCreatedDept, setProjectCreatedDept] = useState("all");
   const [projectCreatedStatus, setProjectCreatedStatus] = useState("all");
   const [projectPieDept, setProjectPieDept] = useState("all");
@@ -2260,10 +2263,12 @@ export default function App() {
           const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
 
           const fp = deptFilter === "all" ? projects : projects.filter(p => p.dept === deptFilter);
-          const ft = filteredTasks.filter(t => t.status !== "Abandonné");
+          const ft = filteredTasks.filter(t => t.status !== "Abandonné"); // For KPIs (exclude abandoned)
+          const ftAll = filteredTasks; // For pie chart (include abandoned)
           const done = ft.filter(t => t.status === "Terminé").length;
           const inProgress = ft.filter(t => t.status === "En cours").length;
           const todo = ft.filter(t => t.status === "À faire").length;
+          const abandoned = ftAll.filter(t => t.status === "Abandonné").length;
           const overdue = ft.filter(t => isOverdue(t.due) && t.status !== "Terminé").length;
           const completion = ft.length ? Math.round((done / ft.length) * 100) : 0;
 
@@ -2288,13 +2293,14 @@ export default function App() {
           // Bar chart: tasks by dept
           const tasksForDeptChart = filterByPeriod(filteredTasks, deptTaskPeriod);
           const tasksByDept = DEPTS.map(d => {
-            const dt = tasksForDeptChart.filter(t => t.dept === d.id && t.status !== "Abandonné");
+            const dt = tasksForDeptChart.filter(t => t.dept === d.id); // Include all statuses
             return {
               name: d.icon,
               label: d.label,
               Terminé: dt.filter(t => t.status === "Terminé").length,
               "En cours": dt.filter(t => t.status === "En cours").length,
               "À faire": dt.filter(t => t.status === "À faire").length,
+              Abandonné: dt.filter(t => t.status === "Abandonné").length,
               color: d.color,
             };
           });
@@ -2329,6 +2335,7 @@ export default function App() {
             { name: "En cours", value: inProgress, color: "#4A90D9" },
             { name: "À faire", value: todo, color: "#E8A838" },
             { name: "En retard", value: overdue, color: "#E85555" },
+            { name: "Abandonné", value: abandoned, color: "#999" },
           ].filter(d => d.value > 0);
 
           // Radial: completion dial
@@ -2792,20 +2799,28 @@ export default function App() {
                 let filteredProjects = projects;
                 if (projectCreatedDept !== "all") filteredProjects = filteredProjects.filter(p => p.dept === projectCreatedDept);
                 
-                // Build date map (use startDate or createdDate, fallback to today)
+                // Build date map (use startDate or createdDate for created; completedDate for completed; abandonedDate for abandoned)
                 const dateMap = {};
                 filteredProjects.forEach(p => {
                   const createdDate = p.startDate || p.createdDate || todayStr;
                   if (createdDate) {
-                    dateMap[createdDate] = dateMap[createdDate] || { date: createdDate, created: 0 };
+                    dateMap[createdDate] = dateMap[createdDate] || { date: createdDate, created: 0, completed: 0, abandoned: 0 };
                     dateMap[createdDate].created++;
+                  }
+                  if (p.completedDate && p.status === "Terminé") {
+                    dateMap[p.completedDate] = dateMap[p.completedDate] || { date: p.completedDate, created: 0, completed: 0, abandoned: 0 };
+                    dateMap[p.completedDate].completed++;
+                  }
+                  if (p.abandonedDate && p.status === "Abandonné") {
+                    dateMap[p.abandonedDate] = dateMap[p.abandonedDate] || { date: p.abandonedDate, created: 0, completed: 0, abandoned: 0 };
+                    dateMap[p.abandonedDate].abandoned++;
                   }
                 });
                 
                 const projectDataRaw = Object.values(dateMap)
                   .sort((a, b) => a.date.localeCompare(b.date));
                 
-                const projectData = aggregateByPeriod(projectDataRaw, projectCreatedPeriod, ["created"], "sum");
+                const projectData = aggregateByPeriod(projectDataRaw, projectCreatedPeriod, ["created", "completed", "abandoned"], "sum");
                 
                 return (
                   <div style={{ ...chartCard, marginBottom: 16 }}>
@@ -2818,10 +2833,43 @@ export default function App() {
                           ))}
                         </div>
                       </div>
-                      <select value={projectCreatedDept} onChange={e => setProjectCreatedDept(e.target.value)} style={selectStyle}>
-                        <option value="all">Tous départements</option>
-                        {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
-                      </select>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <select value={projectCreatedDept} onChange={e => setProjectCreatedDept(e.target.value)} style={selectStyle}>
+                          <option value="all">Tous départements</option>
+                          {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                        </select>
+                        
+                        {/* Statuts checkboxes */}
+                        <div style={{ display: "flex", gap: 8, marginLeft: 8, paddingLeft: 8, borderLeft: "1px solid #e0e0e0" }}>
+                          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, cursor: "pointer" }}>
+                            <input 
+                              type="checkbox" 
+                              checked={projectShowCreated}
+                              onChange={e => setProjectShowCreated(e.target.checked)}
+                              style={{ cursor: "pointer" }}
+                            />
+                            Créés
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, cursor: "pointer" }}>
+                            <input 
+                              type="checkbox" 
+                              checked={projectShowCompleted}
+                              onChange={e => setProjectShowCompleted(e.target.checked)}
+                              style={{ cursor: "pointer" }}
+                            />
+                            Terminés
+                          </label>
+                          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, cursor: "pointer" }}>
+                            <input 
+                              type="checkbox" 
+                              checked={projectShowAbandoned}
+                              onChange={e => setProjectShowAbandoned(e.target.checked)}
+                              style={{ cursor: "pointer" }}
+                            />
+                            Abandonnés
+                          </label>
+                        </div>
+                      </div>
                     </div>
                     {projectData.length < 1
                       ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas de projets à afficher.</div>
@@ -2832,7 +2880,9 @@ export default function App() {
                           <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
                           <Tooltip content={<CustomTooltip />} />
                           <Legend />
-                          <Line type="monotone" dataKey="created" name="Projets créés" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} />
+                          {projectShowCreated && <Line type="monotone" dataKey="created" name="Créés" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} />}
+                          {projectShowCompleted && <Line type="monotone" dataKey="completed" name="Terminés" stroke="#6BBF6B" strokeWidth={2.5} dot={{ fill: "#6BBF6B", r: 4 }} />}
+                          {projectShowAbandoned && <Line type="monotone" dataKey="abandoned" name="Abandonnés" stroke="#E85555" strokeWidth={2.5} dot={{ fill: "#E85555", r: 4 }} />}
                         </LineChart>
                       </ResponsiveContainer>
                     }
@@ -3260,7 +3310,8 @@ export default function App() {
                             "Terminé": "Terminé",
                             "En cours": "En cours",
                             "À faire": "À faire",
-                            "En retard": "overdue" // Special filter for overdue tasks
+                            "En retard": "overdue", // Special filter for overdue tasks
+                            "Abandonné": "Abandonné"
                           };
                           const filterValue = statusMap[d.name];
                           if (filterValue) {
@@ -3306,6 +3357,7 @@ export default function App() {
                       ["Tâches en cours", inProgress, "#E8A838"],
                       ["En retard", overdue, overdue > 0 ? "#E85555" : "#6BBF6B"],
                       ["Terminées", done, "#6BBF6B"],
+                      ["Abandonnées", abandoned, "#999"],
                     ].map(([label, val, color]) => (
                       <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#fff", border: "1px solid #eee", borderLeft: `3px solid ${color}`, borderRadius: 8 }}>
                         <span style={{ fontSize: 12, color: "#666" }}>{label}</span>
@@ -3335,7 +3387,8 @@ export default function App() {
                     <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                     <Bar dataKey="À faire" stackId="a" fill="#E8A83866" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="En cours" stackId="a" fill="#4A90D966" />
-                    <Bar dataKey="Terminé" stackId="a" fill="#6BBF6B" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Terminé" stackId="a" fill="#6BBF6B" />
+                    <Bar dataKey="Abandonné" stackId="a" fill="#999" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

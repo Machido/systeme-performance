@@ -290,6 +290,7 @@ export default function App() {
   const [kanbanFocusOnly, setKanbanFocusOnly] = useState(false);
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
   const [projectShowEnCours, setProjectShowEnCours] = useState(false);
   const [projectShowPotentiel, setProjectShowPotentiel] = useState(false);
@@ -1204,6 +1205,7 @@ export default function App() {
           }
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
           if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
+          if (showIncompleteOnly) kanbanTasks = kanbanTasks.filter(t => !t.estH || !t.due);
           if (kanbanShowBotOnly) kanbanTasks = kanbanTasks.filter(t => t.createdBy === 'bot');
           if (kanbanSearch.trim()) {
             const q = kanbanSearch.toLowerCase();
@@ -1277,6 +1279,10 @@ export default function App() {
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={kanbanShowBotOnly} onChange={e => setKanbanShowBotOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
                     🤖 Créées par bot
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                    <input type="checkbox" checked={showIncompleteOnly} onChange={e => setShowIncompleteOnly(e.target.checked)} style={{ accentColor: "#E85555", width: 16, height: 16, cursor: "pointer" }} />
+                    ⚠️ Incomplètes (sans heures/échéance)
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={kanbanFocusOnly} onChange={e => setKanbanFocusOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />

@@ -1102,7 +1102,7 @@ export default function App() {
         });
       }
 
-      if (completedTasks.length > 0) {
+      if (includeTasks && includeCompletedTasks && completedTasks.length > 0) {
         html += `    <div class="section-title">Terminées</div>\n`;
         completedTasks.forEach(t => {
           const hours = t.estH > 0 ? `${t.estH}h` : "";

@@ -624,18 +624,25 @@ export default function App() {
     let updated, record;
     const prevStatus = form.id ? tasks.find(t => t.id === form.id)?.status : null;
     const wasCompleted = form.id && prevStatus !== "Terminé" && form.status === "Terminé";
+    const wasAbandoned = form.id && prevStatus !== "Abandonné" && form.status === "Abandonné";
     if (form.id) {
       record = { ...tasks.find(t => t.id === form.id), ...form };
       // Only auto-set completedDate if status changes to Terminé AND no date was manually entered
       if (wasCompleted && !form.completedDate) record.completedDate = todayStr;
       // Only clear if status changes away from Terminé
       if (prevStatus === "Terminé" && form.status !== "Terminé") record.completedDate = null;
+      // Only auto-set abandonedDate if status changes to Abandonné AND no date was manually entered
+      if (wasAbandoned && !form.abandonedDate) record.abandonedDate = todayStr;
+      // Only clear if status changes away from Abandonné
+      if (prevStatus === "Abandonné" && form.status !== "Abandonné") record.abandonedDate = null;
       updated = tasks.map(t => t.id === form.id ? record : t);
     } else {
       const id = "T" + Date.now();
       record = { ...form, id, passedH: 0, temp: form.temp ?? 5, status: form.status || "À faire", createdDate: todayStr };
       // Only auto-set if creating new task as Terminé AND no date provided
       if (form.status === "Terminé" && !form.completedDate) record.completedDate = todayStr;
+      // Only auto-set if creating new task as Abandonné AND no date provided
+      if (form.status === "Abandonné" && !form.abandonedDate) record.abandonedDate = todayStr;
       updated = [...tasks, record];
     }
     updateTasks(updated);
@@ -3966,15 +3973,27 @@ export default function App() {
                   </div>
                 </div>
 
-                <div style={s.row}>
-                  <div style={{ flex: 1 }}>
-                    <label style={s.label}>Date de complétion</label>
+                {/* Date de complétion - only if status = Terminé */}
+                {form.status === "Terminé" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={s.label}>Date de complétion 🎉</label>
                     <input type="date" style={s.input} value={form.completedDate || ""} onChange={e => setForm({ ...form, completedDate: e.target.value })} />
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Date à laquelle la tâche a été terminée</div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={s.label}>Date de création</label>
-                    <input type="date" style={{ ...s.input, background: "#f5f5f5", color: "#888" }} value={form.createdDate || ""} readOnly />
+                )}
+
+                {/* Date d'abandon - only if status = Abandonné */}
+                {form.status === "Abandonné" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={s.label}>Date d'abandon 🗑️</label>
+                    <input type="date" style={s.input} value={form.abandonedDate || ""} onChange={e => setForm({ ...form, abandonedDate: e.target.value })} />
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Date à laquelle la tâche a été abandonnée</div>
                   </div>
+                )}
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={s.label}>Date de création</label>
+                  <input type="date" style={{ ...s.input, background: "#f5f5f5", color: "#888" }} value={form.createdDate || ""} readOnly />
                 </div>
 
                 <div style={s.row}>

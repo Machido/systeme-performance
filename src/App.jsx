@@ -1025,13 +1025,35 @@ export default function App() {
     }
     @media print {
       .footer {
+      .print-btn {
+        display: none;
+      }
         position: fixed;
         bottom: 0;
       }
     }
+    .print-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: #5b4ef8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+    .print-btn:hover {
+      background: #4a3de0;
+    }
   </style>
 </head>
 <body>
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimer</button>
   <h1>PROJETS - VUE IMPRIMÉE \ud83d\udd25</h1>
   <div class="date">Imprimé le ${dateStr} à ${timeStr}</div>
 `;

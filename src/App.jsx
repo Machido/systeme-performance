@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { supabase } from "./supabase.js";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar, LineChart, Line, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts";
+import JSZip from "jszip";
 
 const DEPTS = [
   { id: "ops", label: "Opérations", icon: "⚙️", color: "#4A90D9" },
@@ -551,9 +552,14 @@ export default function App() {
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
   };
 
-  // ── Export All Data (Backup) ──
-  const exportAllData = () => {
-    const timestamp = new Date().toISOString().split("T")[0];
+  // ── Export All Data (Backup as ZIP) ──
+  const exportAllData = async () => {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yy = String(now.getFullYear()).slice(-2);
+    const folderName = `Sysperf_data_backup_${dd}-${mm}-${yy}`;
+    
     const tables = [
       { name: "projects", data: projects },
       { name: "tasks", data: tasks },
@@ -562,17 +568,34 @@ export default function App() {
       { name: "habit_logs", data: habitLogs },
     ];
 
-    let exported = [];
-    tables.forEach(({ name, data }, index) => {
+    const zip = new JSZip();
+    let fileCount = 0;
+
+    tables.forEach(({ name, data }) => {
       if (data.length > 0) {
-        setTimeout(() => exportCSV(data, `${timestamp}_${name}.csv`), index * 200);
-        exported.push(`- ${timestamp}_${name}.csv`);
+        const keys = Object.keys(data[0]);
+        const rows = [keys.join(","), ...data.map(r => keys.map(k => `"${String(r[k] ?? "").replace(/"/g, '""')}"`).join(","))];
+        const csvContent = rows.join("\n");
+        zip.file(`${name}.csv`, csvContent);
+        fileCount++;
       }
     });
 
-    setTimeout(() => {
-      alert(`✅ Export complet lancé!\n\nFichiers téléchargés:\n${exported.join("\n")}`);
-    }, tables.length * 200 + 100);
+    if (fileCount === 0) {
+      alert("⚠️ Aucune donnée à exporter.");
+      return;
+    }
+
+    try {
+      const blob = await zip.generateAsync({ type: "blob" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${folderName}.zip`;
+      a.click();
+      alert(`✅ Backup créé!\n\nFichier: ${folderName}.zip\nContient: ${fileCount} fichiers CSV`);
+    } catch (error) {
+      alert("❌ Erreur lors de la création du backup: " + error.message);
+    }
   };
 
   const filteredTasks = useMemo(() =>

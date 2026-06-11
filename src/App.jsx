@@ -228,6 +228,7 @@ export default function App() {
   const [journal, setJournal] = useState(initialJournal);
   const [deptFilter, setDeptFilter] = useState("all");
   const [showModal, setShowModal] = useState(null);
+  const [printOptions, setPrintOptions] = useState({ includeTasks: false, includeCompletedTasks: false });
   const [form, setForm] = useState({});
   const [dragging, setDragging] = useState(null);
   const [storageReady, setStorageReady] = useState(false);
@@ -871,6 +872,10 @@ export default function App() {
   };
 
   const printVisibleProjects = () => {
+    setShowModal("printOptions");
+  };
+
+  const doPrintVisibleProjects = (includeTasks, includeCompletedTasks) => {
     // Apply same filters as the Projects view
     let filtered = projectDeptFilter === "all" ? projects : projects.filter(p => p.dept === projectDeptFilter);
     if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
@@ -1086,7 +1091,7 @@ export default function App() {
     </div>
 `;
 
-      if (activeTasks.length > 0) {
+      if (includeTasks && activeTasks.length > 0) {
         html += `    <div class="section-title">À faire / En cours</div>\n`;
         activeTasks.forEach(t => {
           const prioIcon = t.priority === "Haute" ? "\ud83d\udd25" : t.priority === "Basse" ? "\ud83d\udce6" : "\ud83d\udccb";
@@ -5024,6 +5029,49 @@ export default function App() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── PRINT OPTIONS MODAL ── */}
+      {showModal === "printOptions" && (
+        <div style={s.modal} onClick={e => e.target === e.currentTarget && setShowModal(null)}>
+          <div style={{ ...s.modalBox, maxWidth: 400 }}>
+            <h3 style={{ margin: "0 0 20px 0", fontSize: 18 }}>Options d'impression</h3>
+            
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 12 }}>
+                <input 
+                  type="checkbox" 
+                  checked={printOptions.includeTasks}
+                  onChange={e => setPrintOptions({ ...printOptions, includeTasks: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 14 }}>Inclure les tâches</span>
+              </label>
+              
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", paddingLeft: 26 }}>
+                <input 
+                  type="checkbox" 
+                  checked={printOptions.includeCompletedTasks}
+                  onChange={e => setPrintOptions({ ...printOptions, includeCompletedTasks: e.target.checked })}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                  disabled={!printOptions.includeTasks}
+                />
+                <span style={{ fontSize: 14, color: printOptions.includeTasks ? "#222" : "#aaa" }}>Inclure les tâches terminées</span>
+              </label>
+            </div>
+            
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button style={s.btn("ghost")} onClick={() => setShowModal(null)}>Annuler</button>
+              <button 
+                style={s.btn("primary")} 
+                onClick={() => {
+                  setShowModal(null);
+                  doPrintVisibleProjects(printOptions.includeTasks, printOptions.includeCompletedTasks);
+                }}
+              >🖨️ Imprimer</button>
+            </div>
           </div>
         </div>
       )}

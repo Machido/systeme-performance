@@ -305,6 +305,7 @@ export default function App() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
+  const [showMissingAbandonDate, setShowMissingAbandonDate] = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
   const [projectShowEnCours, setProjectShowEnCours] = useState(false);
   const [projectShowPotentiel, setProjectShowPotentiel] = useState(false);
@@ -1275,6 +1276,7 @@ export default function App() {
           if (statusFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.status === statusFilter);
           if (!kanbanShowDone) kanbanTasks = kanbanTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
           if (showIncompleteOnly) kanbanTasks = kanbanTasks.filter(t => !t.estH || !t.due);
+          if (showMissingAbandonDate) kanbanTasks = kanbanTasks.filter(t => t.status === "Abandonné" && !t.abandonedDate);
           if (kanbanShowBotOnly) kanbanTasks = kanbanTasks.filter(t => t.createdBy === 'bot');
           if (kanbanSearch.trim()) {
             const q = kanbanSearch.toLowerCase();
@@ -1352,6 +1354,10 @@ export default function App() {
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={showIncompleteOnly} onChange={e => setShowIncompleteOnly(e.target.checked)} style={{ accentColor: "#E85555", width: 16, height: 16, cursor: "pointer" }} />
                     ⚠️ Incomplètes (sans heures/échéance)
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                    <input type="checkbox" checked={showMissingAbandonDate} onChange={e => setShowMissingAbandonDate(e.target.checked)} style={{ accentColor: "#E85555", width: 16, height: 16, cursor: "pointer" }} />
+                    🗑️ Sans date d'abandon
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                     <input type="checkbox" checked={kanbanFocusOnly} onChange={e => setKanbanFocusOnly(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
@@ -2458,8 +2464,8 @@ export default function App() {
                   // Use completedDate, or fallback to due/today for completed tasks
                   const doneDate = t.status === "Terminé" ? (t.completedDate || t.due || todayStr) : t.completedDate;
                   if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0, abandoned: 0 }; dateMap[doneDate].completed++; }
-                  // Use abandoneddate for abandoned tasks
-                  const abandonDate = t.status === "Abandonné" ? (t.abandoneddate || todayStr) : t.abandoneddate;
+                  // Use abandonedDate for abandoned tasks (only if date exists)
+                  const abandonDate = t.status === "Abandonné" && t.abandonedDate ? t.abandonedDate : null;
                   if (abandonDate) { dateMap[abandonDate] = dateMap[abandonDate] || { date: abandonDate, created: 0, completed: 0, abandoned: 0 }; dateMap[abandonDate].abandoned++; }
                 });
                 let veloDataRaw = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));

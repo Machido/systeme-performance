@@ -2464,9 +2464,12 @@ export default function App() {
                   // Use completedDate, or fallback to due/today for completed tasks
                   const doneDate = t.status === "Terminé" ? (t.completedDate || t.due || todayStr) : t.completedDate;
                   if (doneDate) { dateMap[doneDate] = dateMap[doneDate] || { date: doneDate, created: 0, completed: 0, abandoned: 0 }; dateMap[doneDate].completed++; }
-                  // Use abandonedDate for abandoned tasks (only if date exists)
-                  const abandonDate = t.status === "Abandonné" && t.abandonedDate ? t.abandonedDate : null;
-                  if (abandonDate) { dateMap[abandonDate] = dateMap[abandonDate] || { date: abandonDate, created: 0, completed: 0, abandoned: 0 }; dateMap[abandonDate].abandoned++; }
+                  // Use abandonedDate for abandoned tasks, fallback to createdDate for old tasks without abandonedDate
+                  if (t.status === "Abandonné") {
+                    const abandonDate = t.abandonedDate || t.createdDate || todayStr;
+                    dateMap[abandonDate] = dateMap[abandonDate] || { date: abandonDate, created: 0, completed: 0, abandoned: 0 };
+                    dateMap[abandonDate].abandoned++;
+                  }
                 });
                 let veloDataRaw = Object.values(dateMap).filter(d => d.date <= todayStr).sort((a, b) => a.date.localeCompare(b.date));
                 

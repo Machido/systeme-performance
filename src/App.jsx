@@ -13,6 +13,15 @@ const DEPTS = [
 const STATUSES = ["À faire", "En cours", "Terminé", "Abandonné"];
 const STATUS_ICONS = { "À faire": "📋", "En cours": "⚡", "Terminé": "✅", "Abandonné": "🗃" };
 const PRIORITIES = ["Haute", "Moyenne", "Basse"];
+const ABANDON_REASONS = [
+  { id: "too-ambitious", label: "🎯 Trop ambitieux" },
+  { id: "no-time", label: "⏰ Manque de temps" },
+  { id: "duplicate", label: "🔄 Doublon" },
+  { id: "lost-interest", label: "📉 Perte d'intérêt" },
+  { id: "blocked", label: "🚫 Bloqué" },
+  { id: "bad-idea", label: "💡 Mauvaise idée" },
+  { id: "other", label: "🔧 Autre" },
+];
 const PRIO_COLOR = { Haute: "#E85555", Moyenne: "#E8A838", Basse: "#888" };
 const PROJECT_STATUSES = ["Potentiel", "En cours", "Terminé", "Abandonné"];
 const PROJECT_STATUS_COLOR = { Potentiel: "#aaa", "En cours": "#4A90D9", "Terminé": "#6BBF6B", "Abandonné": "#ccc" };
@@ -3476,6 +3485,51 @@ export default function App() {
           );
         })()}
 
+
+        {/* Abandon Reasons Pie Chart */}
+        {tab === "dashboard" && (() => {
+          const abandonedTasks = filteredTasks.filter(t => t.status === "Abandonné" && t.abandonReason);
+          
+          if (abandonedTasks.length === 0) return null;
+
+          // Group by reason
+          const reasonCounts = {};
+          abandonedTasks.forEach(t => {
+            const reason = t.abandonReason || "Non spécifiée";
+            reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+          });
+
+          const pieData = Object.entries(reasonCounts)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+          const colors = ["#E85555", "#E8A838", "#4A90D9", "#6BBF6B", "#B07FE8", "#999", "#5b4ef8"];
+
+          return (
+            <div style={{ ...chartCard, marginTop: 16 }}>
+              <div style={chartTitle}>🔍 18. Raisons d'abandon</div>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie 
+                    data={pieData} 
+                    dataKey="value" 
+                    nameKey="name" 
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius={80} 
+                    label={(entry) => `${entry.name} (${entry.value})`}
+                  >
+                    {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ fontSize: 11, color: "#666", textAlign: "center", marginTop: 8 }}>
+                Total tâches abandonnées avec raison: {abandonedTasks.length}
+              </div>
+            </div>
+          );
+        })()}
         {/* ── JOURNAL ── */}
         {tab === "journal" && (() => {
           let journalList = journal;
@@ -4034,11 +4088,45 @@ export default function App() {
 
                 {/* Date d'abandon - only if status = Abandonné */}
                 {form.status === "Abandonné" && (
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={s.label}>Date d'abandon 🗑️</label>
-                    <input type="date" style={s.input} value={form.abandonedDate || ""} onChange={e => setForm({ ...form, abandonedDate: e.target.value })} />
-                    <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Date à laquelle la tâche a été abandonnée</div>
-                  </div>
+                  <>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={s.label}>Date d'abandon 🗑️</label>
+                      <input type="date" style={s.input} value={form.abandonedDate || ""} onChange={e => setForm({ ...form, abandonedDate: e.target.value })} />
+                      <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Date à laquelle la tâche a été abandonnée</div>
+                    </div>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={s.label}>Raison d'abandon 🔍</label>
+                      <select 
+                        style={s.input} 
+                        value={form.abandonReason && ABANDON_REASONS.find(r => form.abandonReason.startsWith(r.label)) ? form.abandonReason : (form.abandonReason ? "other" : "")} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val === "other") {
+                            setForm({ ...form, abandonReason: "" }); // Clear to show text input
+                          } else {
+                            setForm({ ...form, abandonReason: val });
+                          }
+                        }}
+                      >
+                        <option value="">Sélectionner une raison...</option>
+                        {ABANDON_REASONS.map(r => <option key={r.id} value={r.label}>{r.label}</option>)}
+                      </select>
+
+                      {/* Custom text input if "Autre" selected or custom text exists */}
+                      {(form.abandonReason === "" || (form.abandonReason && !ABANDON_REASONS.find(r => r.label === form.abandonReason))) && (
+                        <input 
+                          type="text" 
+                          placeholder="Précisez la raison..."
+                          style={{ ...s.input, marginTop: 8 }}
+                          value={form.abandonReason || ""}
+                          onChange={e => setForm({ ...form, abandonReason: e.target.value })}
+                        />
+                      )}
+
+                      <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Pourquoi cette tâche a-t-elle été abandonnée ?</div>
+                    </div>
+                  </>
                 )}
 
                 <div style={{ marginBottom: 16 }}>

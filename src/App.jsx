@@ -427,18 +427,35 @@ export default function App() {
   const updateHabitLogs = (val) => setHabitLogs(val);
 
   const quickLogHabitNow = async (habitId, completed = true) => {
-    const logId = "HL" + Date.now();
-    const record = {
-      id: logId,
-      habit_id: habitId,
-      user_id: "default",
-      logged_at: getLocalDateTimeStr(),
-      completed,
-      created_at: getLocalDateTimeStr(),
-    };
-    const updated = [...habitLogs, record];
-    updateHabitLogs(updated);
-    await syncRecord("habit_logs", record);
+    const todayStr = new Date().toISOString().split("T")[0];
+    
+    // Check if log already exists for today
+    const existingLog = habitLogs.find(l => {
+      const logDate = getLocalDateFromTimestamp(l.logged_at);
+      return l.habit_id === habitId && logDate === todayStr;
+    });
+
+    if (existingLog) {
+      // Update existing log
+      const record = { ...existingLog, completed, logged_at: getLocalDateTimeStr() };
+      const updated = habitLogs.map(l => l.id === existingLog.id ? record : l);
+      updateHabitLogs(updated);
+      await syncRecord("habit_logs", record);
+    } else {
+      // Create new log
+      const logId = "HL" + Date.now();
+      const record = {
+        id: logId,
+        habit_id: habitId,
+        user_id: "default",
+        logged_at: getLocalDateTimeStr(),
+        completed,
+        created_at: getLocalDateTimeStr(),
+      };
+      const updated = [...habitLogs, record];
+      updateHabitLogs(updated);
+      await syncRecord("habit_logs", record);
+    }
   };
 
   const saveHabit = async () => {

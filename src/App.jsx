@@ -283,6 +283,7 @@ export default function App() {
   const [veloShowAbandoned, setVeloShowAbandoned] = useState(false);
   const [satPeriod, setSatPeriod] = useState("daily");
   const [satDateRange, setSatDateRange] = useState("30"); // "7", "14", "30", "all"
+  const [satDeptFilter, setSatDeptFilter] = useState("all");
   const [habitPeriod, setHabitPeriod] = useState("daily");
   const [habitDateRange, setHabitDateRange] = useState("30");
   const [projectCreatedPeriod, setProjectCreatedPeriod] = useState("monthly");
@@ -2582,7 +2583,18 @@ export default function App() {
 
                   {/* Satisfaction trend - full width */}
                   {(() => {
-                    let filteredTempLine = [...tempLine];
+                    // Build tempLine with independent dept filter (not using global deptFilter)
+                    let tempLineForSat = [...journal]
+                      .filter(j => j.type === "📝 Note")
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .filter(j => satDeptFilter === "all" || j.dept === satDeptFilter)
+                      .map(j => ({
+                        date: j.date,
+                        temp: j.temp,
+                        emoji: getTempEmoji(j.temp),
+                      }));
+
+                    let filteredTempLine = [...tempLineForSat];
                     
                     // Filter by date range (only for "daily" period)
                     if (satPeriod === "daily" && satDateRange !== "all") {
@@ -2598,14 +2610,24 @@ export default function App() {
                     return (
                       <div style={{ ...chartCard, marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                             <div style={chartTitle}>📉 3. Tendance satisfaction 💀 → 🚀</div>
+                            
+                            {/* Department filter */}
+                            <select value={satDeptFilter} onChange={e => setSatDeptFilter(e.target.value)} style={selectStyle}>
+                              <option value="all">Tous départements</option>
+                              {DEPTS.map(d => <option key={d.id} value={d.id}>{d.icon} {d.label}</option>)}
+                            </select>
+                            
+                            {/* Period buttons */}
                             <div style={{ display: "flex", gap: 4 }}>
                               {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                                 <button key={k} style={toggleStyle2(satPeriod === k)} onClick={() => setSatPeriod(k)}>{l}</button>
                               ))}
                             </div>
                           </div>
+                          
+                          {/* Date range filter (only for daily) */}
                           {satPeriod === "daily" && (
                             <select value={satDateRange} onChange={e => setSatDateRange(e.target.value)} style={selectStyle}>
                               <option value="7">7 derniers jours</option>

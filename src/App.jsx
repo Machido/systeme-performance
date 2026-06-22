@@ -1650,7 +1650,8 @@ export default function App() {
                   </div>
                   {grouped.map(p => {
                     const projTasks = tasks.filter(t => t.project === p.id);
-                    const incompleteTasks = projTasks.filter(t => t.status !== "Terminé" && t.status !== "Abandonné");
+                    // Show ALL tasks when expanded (including Terminé and Abandonné)
+                    const incompleteTasks = projTasks; // Changed: was .filter(t => t.status !== "Terminé" && t.status !== "Abandonné")
                     const doneTasks = projTasks.filter(t => t.status === "Terminé").length;
                     const pct = projTasks.length ? Math.round((doneTasks / projTasks.length) * 100) : 0;
                     const deptColor = getDeptColor(p.dept);

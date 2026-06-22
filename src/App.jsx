@@ -3330,7 +3330,7 @@ export default function App() {
                     diffPercent: estHours > 0 ? Math.round((diff / estHours) * 100) : 0,
                     overBudget: diff > 0
                   };
-                }).filter(p => p.estHours > 0); // Only show projects with estimates
+                }); // Show ALL completed projects (including those without estimates)
                 
                 if (projectHoursData.length === 0) return null;
                 

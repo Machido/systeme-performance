@@ -304,6 +304,7 @@ export default function App() {
   const [kanbanShowBotOnly, setKanbanShowBotOnly] = useState(false);
   const [kanbanFocusOnly, setKanbanFocusOnly] = useState(false);
   const [projectFilter, setProjectFilter] = useState("all");
+  const [projectSearchFilter, setProjectSearchFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
   const [showMissingAbandonDate, setShowMissingAbandonDate] = useState(false);
@@ -1340,10 +1341,55 @@ export default function App() {
                 </div>
                 <div>
                   <label style={s.label}>Projet</label>
+                  {/* Search input for projects */}
+                  <input 
+                    type="text" 
+                    placeholder="Rechercher un projet..."
+                    value={projectSearchFilter}
+                    onChange={e => setProjectSearchFilter(e.target.value)}
+                    style={{ ...s.input, marginBottom: 4, minWidth: 170, fontSize: 11 }}
+                  />
+                  {/* Dropdown grouped by department */}
                   <select style={{ ...s.select, marginBottom: 0, minWidth: 170 }} value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>
                     <option value="all">Tous les projets</option>
                     <option value="none">Aucun projet</option>
-                    {projects.map(p => <option key={p.id} value={p.id}>{getDeptIcon(p.dept)} {p.name}</option>)}
+                    
+                    {/* Filter projects by search */}
+                    {(() => {
+                      const searchLower = projectSearchFilter.toLowerCase();
+                      const filteredProjects = projectSearchFilter 
+                        ? projects.filter(p => p.name.toLowerCase().includes(searchLower))
+                        : projects;
+                      
+                      // Group by department
+                      const projectsByDept = DEPTS.map(dept => ({
+                        ...dept,
+                        projects: filteredProjects.filter(p => p.dept === dept.id)
+                      })).filter(d => d.projects.length > 0);
+                      
+                      // Projects without department
+                      const noDeptProjects = filteredProjects.filter(p => !p.dept || !DEPTS.find(d => d.id === p.dept));
+                      
+                      return (
+                        <>
+                          {projectsByDept.map(dept => (
+                            <optgroup key={dept.id} label={`${dept.icon} ${dept.label}`}>
+                              {dept.projects.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                          
+                          {noDeptProjects.length > 0 && (
+                            <optgroup label="📎 Autres">
+                              {noDeptProjects.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </>
+                      );
+                    })()}
                   </select>
                 </div>
                 <div>

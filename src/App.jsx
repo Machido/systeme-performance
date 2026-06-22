@@ -1288,6 +1288,16 @@ export default function App() {
           if (deptFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.dept === deptFilter);
           if (projectFilter === "none") kanbanTasks = kanbanTasks.filter(t => !t.project);
           else if (projectFilter !== "all") kanbanTasks = kanbanTasks.filter(t => t.project === projectFilter);
+          
+          // Filter by project search (text search)
+          if (projectSearchFilter.trim()) {
+            const searchLower = projectSearchFilter.toLowerCase();
+            const matchingProjectIds = projects
+              .filter(p => p.name.toLowerCase().includes(searchLower))
+              .map(p => p.id);
+            kanbanTasks = kanbanTasks.filter(t => matchingProjectIds.includes(t.project));
+          }
+          
           if (kanbanFocusOnly) {
             const focusProjectIds = projects.filter(p => p.focus).map(p => p.id);
             kanbanTasks = kanbanTasks.filter(t => focusProjectIds.includes(t.project));

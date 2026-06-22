@@ -1849,6 +1849,15 @@ export default function App() {
                               <div>
                                 {incompleteTasks.map(task => {
                                   const priorityIcon = task.priority === "Haute" ? "🔥" : task.priority === "Basse" ? "📦" : "📋";
+                                  
+                                  // Visual indicators for completed/abandoned tasks
+                                  const isTermine = task.status === "Terminé";
+                                  const isAbandonne = task.status === "Abandonné";
+                                  const statusIcon = isTermine ? "✅" : isAbandonne ? "🗑️" : priorityIcon;
+                                  const strikethrough = isTermine || isAbandonne;
+                                  const textColor = isAbandonne ? "#999" : "#222";
+                                  const borderColor = isAbandonne ? "#ffcdd2" : isTermine ? "#c8e6c9" : "#e8e8e8";
+                                  
                                   return (
                                     <div
                                       key={task.id}
@@ -1857,18 +1866,22 @@ export default function App() {
                                         padding: "8px 12px",
                                         marginBottom: 6,
                                         background: "#fff",
-                                        border: "1px solid #e8e8e8",
+                                        border: `1px solid ${borderColor}`,
                                         borderRadius: 4,
                                         cursor: "pointer",
                                         transition: "all 0.15s",
-                                        fontSize: 13
+                                        fontSize: 13,
+                                        opacity: strikethrough ? 0.7 : 1
                                       }}
                                       onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
                                       onMouseLeave={e => e.currentTarget.style.background = "#fff"}
                                     >
                                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <span>
-                                          {priorityIcon} {task.name}
+                                        <span style={{ 
+                                          textDecoration: strikethrough ? "line-through" : "none",
+                                          color: textColor
+                                        }}>
+                                          {statusIcon} {task.name}
                                         </span>
                                         <span style={{ fontSize: 11, color: "#aaa" }}>
                                           {task.estH > 0 && `${task.estH}h`}

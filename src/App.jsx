@@ -2983,7 +2983,7 @@ export default function App() {
                 let filteredProjects = projects;
                 if (projectCreatedDept !== "all") filteredProjects = filteredProjects.filter(p => p.dept === projectCreatedDept);
                 
-                // Build date map (use startDate or createdDate for created; completedDate for completed; abandonedDate for abandoned)
+                // Build date map (use startDate or createdDate for created; completedDate/endDate for completed; abandonedDate for abandoned)
                 const dateMap = {};
                 filteredProjects.forEach(p => {
                   const createdDate = p.startDate || p.createdDate || todayStr;
@@ -2991,13 +2991,17 @@ export default function App() {
                     dateMap[createdDate] = dateMap[createdDate] || { date: createdDate, created: 0, completed: 0, abandoned: 0 };
                     dateMap[createdDate].created++;
                   }
-                  if (p.completedDate && p.status === "Terminé") {
-                    dateMap[p.completedDate] = dateMap[p.completedDate] || { date: p.completedDate, created: 0, completed: 0, abandoned: 0 };
-                    dateMap[p.completedDate].completed++;
+                  // For completed projects: use completedDate, or endDate, or today as fallback
+                  if (p.status === "Terminé") {
+                    const completedDate = p.completedDate || p.endDate || todayStr;
+                    dateMap[completedDate] = dateMap[completedDate] || { date: completedDate, created: 0, completed: 0, abandoned: 0 };
+                    dateMap[completedDate].completed++;
                   }
-                  if (p.abandonedDate && p.status === "Abandonné") {
-                    dateMap[p.abandonedDate] = dateMap[p.abandonedDate] || { date: p.abandonedDate, created: 0, completed: 0, abandoned: 0 };
-                    dateMap[p.abandonedDate].abandoned++;
+                  // For abandoned projects: use abandonedDate, or endDate, or today as fallback
+                  if (p.status === "Abandonné") {
+                    const abandonedDate = p.abandonedDate || p.endDate || todayStr;
+                    dateMap[abandonedDate] = dateMap[abandonedDate] || { date: abandonedDate, created: 0, completed: 0, abandoned: 0 };
+                    dateMap[abandonedDate].abandoned++;
                   }
                 });
                 

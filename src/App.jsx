@@ -20,6 +20,7 @@ const ABANDON_REASONS = [
   { id: "lost-interest", label: "📉 Perte d'intérêt" },
   { id: "blocked", label: "🚫 Bloqué" },
   { id: "bad-idea", label: "💡 Mauvaise idée" },
+  { id: "no-longer-needed", label: "✅ Plus nécessaire" },
   { id: "other", label: "🔧 Autre" },
 ];
 const PRIO_COLOR = { Haute: "#E85555", Moyenne: "#E8A838", Basse: "#888" };

@@ -282,6 +282,9 @@ export default function App() {
   const [veloShowCreated, setVeloShowCreated] = useState(true);
   const [veloShowCompleted, setVeloShowCompleted] = useState(true);
   const [veloShowAbandoned, setVeloShowAbandoned] = useState(false);
+  // Chart 2.1: Fréquence des saisies
+  const [freqPeriod, setFreqPeriod] = useState("daily");
+  const [freqDateRange, setFreqDateRange] = useState("30"); // "7", "14", "30", "all"
   const [satPeriod, setSatPeriod] = useState("daily");
   const [satDateRange, setSatDateRange] = useState("30"); // "7", "14", "30", "all"
   const [satDeptFilter, setSatDeptFilter] = useState("all");
@@ -2651,6 +2654,75 @@ export default function App() {
                       </ResponsiveContainer>
                     }
                   </div>
+
+                  {/* Chart 2.1: Fréquence des saisies */}
+                  {(() => {
+                    // Count only Notes with temperature (type = "📝 Note")
+                    const notesWithTemp = journal.filter(j => j.type === "📝 Note");
+                    
+                    // Build date map (count entries per date)
+                    const freqMap = {};
+                    notesWithTemp.forEach(j => {
+                      if (!freqMap[j.date]) freqMap[j.date] = 0;
+                      freqMap[j.date]++;
+                    });
+                    
+                    let freqDataRaw = Object.keys(freqMap).map(date => ({
+                      date,
+                      count: freqMap[date]
+                    })).sort((a, b) => a.date.localeCompare(b.date));
+                    
+                    // Apply date range filter (only for daily)
+                    if (freqPeriod === "daily" && freqDateRange !== "all") {
+                      const days = parseInt(freqDateRange);
+                      const cutoffDate = new Date();
+                      cutoffDate.setDate(cutoffDate.getDate() - days);
+                      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+                      freqDataRaw = freqDataRaw.filter(d => d.date >= cutoffStr);
+                    }
+                    
+                    const freqData = aggregateByPeriod(freqDataRaw, freqPeriod, ["count"], "sum");
+                    const selectStyle = { padding: "4px 8px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, background: "#fff", color: "#333" };
+                    const toggleStyle = (active) => ({ padding: "4px 10px", borderRadius: 6, border: "1px solid " + (active ? "#5b4ef8" : "#e0e0e0"), background: active ? "#5b4ef8" : "#fff", color: active ? "#fff" : "#666", fontSize: 11, cursor: "pointer", fontWeight: active ? 600 : 400 });
+                    
+                    return (
+                      <div style={{ ...chartCard, marginBottom: 16 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={chartTitle}>📊 2.1. Fréquence des saisies</div>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
+                                <button key={k} style={toggleStyle(freqPeriod === k)} onClick={() => setFreqPeriod(k)}>{l}</button>
+                              ))}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                            {freqPeriod === "daily" && (
+                              <select value={freqDateRange} onChange={e => setFreqDateRange(e.target.value)} style={selectStyle}>
+                                <option value="7">7 derniers jours</option>
+                                <option value="14">14 derniers jours</option>
+                                <option value="30">30 derniers jours</option>
+                                <option value="all">Tous</option>
+                              </select>
+                            )}
+                          </div>
+                        </div>
+                        {freqData.length < 1
+                          ? <div style={{ textAlign: "center", color: "#aaa", fontSize: 13, padding: "40px 0" }}>Pas de saisies à afficher.</div>
+                          : <ResponsiveContainer width="100%" height={220}>
+                            <LineChart data={freqData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} tickFormatter={d => d.length > 7 ? d.slice(5) : d} />
+                              <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#aaa" }} />
+                              <Tooltip />
+                              <Legend />
+                              <Line type="monotone" dataKey="count" name="Saisies" stroke="#5b4ef8" strokeWidth={2.5} dot={{ fill: "#5b4ef8", r: 4 }} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        }
+                      </div>
+                    );
+                  })()}
 
                   {/* Satisfaction trend - full width */}
                   {(() => {

@@ -4507,9 +4507,36 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Actual hours display (for completed projects) */}
+                {/* Warning if project marked Terminé but no hours recorded */}
                 {form.status === "Terminé" && (() => {
                   const actualHours = calculateProjectActualHours(form.id, tasks);
+                  
+                  if (actualHours === 0) {
+                    return (
+                      <div style={{ 
+                        border: '2px solid #ff9800', 
+                        borderRadius: 8, 
+                        padding: 12, 
+                        marginBottom: 16, 
+                        background: '#fff3e0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10
+                      }}>
+                        <div style={{ fontSize: 24 }}>⚠️</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#e65100', marginBottom: 4 }}>
+                            Attention : Projet marqué "Terminé" mais aucun temps passé
+                          </div>
+                          <div style={{ fontSize: 12, color: '#666' }}>
+                            Veuillez enregistrer le temps passé sur les tâches de ce projet pour finaliser la complétion.
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Show actual hours comparison if hours were recorded
                   const estHours = form.estHours || 0;
                   const diff = actualHours - estHours;
                   const diffPercent = estHours > 0 ? Math.round((diff / estHours) * 100) : 0;

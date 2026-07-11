@@ -761,13 +761,10 @@ export default function App() {
     if (formData.status === "Abandonné" && !formData.abandonedDate) {
       formData.abandonedDate = todayStr;
     }
-    // REMOVED: completedDate auto-fill (column doesn't exist in DB yet)
-    // if (formData.status === "Terminé" && !formData.completedDate) {
-    //   formData.completedDate = todayStr;
-    // }
-    
-    // Remove completedDate from record if it exists (prevents sync error)
-    delete formData.completedDate;
+    // Auto-fill completedDate if status changed to Terminé and date is empty
+    if (formData.status === "Terminé" && !formData.completedDate) {
+      formData.completedDate = todayStr;
+    }
     
     let updated, record;
     if (formData.id) {

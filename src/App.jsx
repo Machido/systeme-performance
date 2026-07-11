@@ -761,10 +761,19 @@ export default function App() {
     if (formData.status === "Abandonné" && !formData.abandonedDate) {
       formData.abandonedDate = todayStr;
     }
-    // Auto-fill completedDate if status changed to Terminé and date is empty
-    if (formData.status === "Terminé" && !formData.completedDate) {
-      formData.completedDate = todayStr;
+    
+    // Warning if marking Terminé without endDate
+    if (formData.status === "Terminé" && !formData.endDate) {
+      const confirmSave = window.confirm(
+        "⚠️ Attention: Vous marquez ce projet comme 'Terminé' mais aucune date de fin n'est renseignée.\n\n" +
+        "Voulez-vous continuer sans date de fin ?\n\n" +
+        "(Recommandé: Cliquez 'Annuler' et remplissez le champ 'Date de fin' avec la date de complétion réelle)"
+      );
+      if (!confirmSave) return; // User clicked Cancel - don't save
     }
+    
+    // WORKAROUND: Remove completedDate to avoid Supabase schema cache bug
+    delete formData.completedDate;
     
     let updated, record;
     if (formData.id) {

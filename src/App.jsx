@@ -413,9 +413,16 @@ export default function App() {
   // ── SYNC helpers ──
   const syncRecord = async (table, record) => {
     try {
+      console.log(`🟢 syncRecord START - ${table}:`, { id: record.id, status: record.status });
       const { error } = await supabase.from(table).upsert(record);
-      if (error) console.error(`Sync error (${table}):`, error.message);
-    } catch (e) { console.error(`Sync exception (${table}):`, e); }
+      if (error) {
+        console.error(`🔴 Sync error (${table}):`, error.message);
+      } else {
+        console.log(`✅ syncRecord SUCCESS - ${table}:`, { id: record.id, status: record.status });
+      }
+    } catch (e) { 
+      console.error(`🔴 Sync exception (${table}):`, e); 
+    }
   };
   const deleteRecord = async (table, id) => {
     try {
@@ -768,6 +775,15 @@ export default function App() {
       record = { ...formData, id, createdDate: todayStr };
       updated = [...projects, record];
     }
+    
+    // DEBUG: Log what's being saved
+    console.log('🔴 saveProject - record being synced:', {
+      id: record.id,
+      name: record.name,
+      status: record.status,
+      completedDate: record.completedDate
+    });
+    
     updateProjects(updated);
     syncRecord("projects", record);
     setShowModal(null);

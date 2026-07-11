@@ -4503,7 +4503,7 @@ export default function App() {
                 {form.status === "Terminé" && (
                   <div style={{ marginBottom: 16 }}>
                     <label style={s.label}>Date de complétion 🎉</label>
-                    <input type="date" style={s.input} value={form.completedDate || ""} onChange={e => setForm({ ...form, completedDate: e.target.value })} />
+                    <input type="date" style={s.input} value={form.actual_completion_date || ""} onChange={e => setForm({ ...form, actual_completion_date: e.target.value })} />
                     <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Date à laquelle le projet a été terminé</div>
                   </div>
                 )}

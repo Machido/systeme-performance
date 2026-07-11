@@ -762,17 +762,23 @@ export default function App() {
       formData.abandonedDate = todayStr;
     }
     
-    // Warning if marking Terminé without endDate
+    // Auto-fill actual_completion_date when marking Terminé
+    if (formData.status === "Terminé" && !formData.actual_completion_date) {
+      formData.actual_completion_date = todayStr;
+    }
+    
+    // Warning if marking Terminé without endDate (planned deadline)
     if (formData.status === "Terminé" && !formData.endDate) {
       const confirmSave = window.confirm(
-        "⚠️ Attention: Vous marquez ce projet comme 'Terminé' mais aucune date de fin n'est renseignée.\n\n" +
-        "Voulez-vous continuer sans date de fin ?\n\n" +
-        "(Recommandé: Cliquez 'Annuler' et remplissez le champ 'Date de fin' avec la date de complétion réelle)"
+        "⚠️ Attention: Vous marquez ce projet comme 'Terminé' mais aucune date de fin prévue (deadline) n'est renseignée.\n\n" +
+        "La date de complétion réelle sera enregistrée automatiquement (" + todayStr + ").\n\n" +
+        "Voulez-vous continuer sans deadline prévue ?\n\n" +
+        "(Astuce: Le champ 'Date de fin' sert à comparer deadline prévue vs complétion réelle)"
       );
       if (!confirmSave) return; // User clicked Cancel - don't save
     }
     
-    // WORKAROUND: Remove completedDate to avoid Supabase schema cache bug
+    // Clean up old completedDate field (Supabase cache bug workaround)
     delete formData.completedDate;
     
     let updated, record;
@@ -3089,9 +3095,9 @@ export default function App() {
                     dateMap[createdDate] = dateMap[createdDate] || { date: createdDate, created: 0, completed: 0, abandoned: 0 };
                     dateMap[createdDate].created++;
                   }
-                  // For completed projects: use completedDate, or endDate, or today as fallback
+                  // For completed projects: use actual_completion_date, or endDate, or today as fallback
                   if (p.status === "Terminé") {
-                    const completedDate = p.completedDate || p.endDate || todayStr;
+                    const completedDate = p.actual_completion_date || p.endDate || todayStr;
                     dateMap[completedDate] = dateMap[completedDate] || { date: completedDate, created: 0, completed: 0, abandoned: 0 };
                     dateMap[completedDate].completed++;
                   }
@@ -3328,14 +3334,14 @@ export default function App() {
 
               {/* Abandoned Projects Over Time */}
               {(() => {
-                const abandonedProjects = projects.filter(p => p.status === "Abandonné" && p.completedDate);
+                const abandonedProjects = projects.filter(p => p.status === "Abandonné" && p.abandonedDate);
                 
                 if (abandonedProjects.length === 0) return null;
                 
                 // Group by month
                 const monthMap = {};
                 abandonedProjects.forEach(p => {
-                  const month = p.completedDate.substring(0, 7); // YYYY-MM
+                  const month = p.abandonedDate.substring(0, 7); // YYYY-MM
                   monthMap[month] = (monthMap[month] || 0) + 1;
                 });
                 

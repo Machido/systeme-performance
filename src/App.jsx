@@ -24,8 +24,8 @@ const ABANDON_REASONS = [
   { id: "other", label: "🔧 Autre" },
 ];
 const PRIO_COLOR = { Haute: "#E85555", Moyenne: "#E8A838", Basse: "#888" };
-const PROJECT_STATUSES = ["Potentiel", "En cours", "Terminé", "Abandonné"];
-const PROJECT_STATUS_COLOR = { Potentiel: "#aaa", "En cours": "#4A90D9", "Terminé": "#6BBF6B", "Abandonné": "#ccc" };
+const PROJECT_STATUSES = ["Brouillon", "Potentiel", "En cours", "Terminé", "Abandonné"];
+const PROJECT_STATUS_COLOR = { Brouillon: "#FF9800", Potentiel: "#aaa", "En cours": "#4A90D9", "Terminé": "#6BBF6B", "Abandonné": "#ccc" };
 const TEMPS = [
   { score: 0, emoji: "💀", label: "Catastrophe" },
   { score: 1, emoji: "😫", label: "Très dur" },
@@ -313,6 +313,7 @@ export default function App() {
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
   const [showMissingAbandonDate, setShowMissingAbandonDate] = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
+  const [projectShowBrouillon, setProjectShowBrouillon] = useState(false);
   const [projectShowEnCours, setProjectShowEnCours] = useState(false);
   const [projectShowPotentiel, setProjectShowPotentiel] = useState(false);
   const [projectShowTermine, setProjectShowTermine] = useState(false);
@@ -1632,6 +1633,10 @@ export default function App() {
                 🔥 Focus uniquement
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
+                <input type="checkbox" checked={projectShowBrouillon} onChange={e => setProjectShowBrouillon(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
+                📝 Brouillon
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", cursor: "pointer", userSelect: "none" }}>
                 <input type="checkbox" checked={projectShowPotentiel} onChange={e => setProjectShowPotentiel(e.target.checked)} style={{ accentColor: "#5b4ef8", width: 16, height: 16, cursor: "pointer" }} />
                 Potentiel
               </label>
@@ -1657,10 +1662,11 @@ export default function App() {
               if (projectFocusOnly) filtered = filtered.filter(p => p.focus);
               
               // Filter by status checkboxes (if ANY is checked, show only checked statuses; if NONE checked, show ALL)
-              const anyStatusChecked = projectShowPotentiel || projectShowEnCours || projectShowTermine || projectShowAbandonne;
+              const anyStatusChecked = projectShowBrouillon || projectShowPotentiel || projectShowEnCours || projectShowTermine || projectShowAbandonne;
               if (anyStatusChecked) {
                 filtered = filtered.filter(p => {
                   if (p.status === "Potentiel" && projectShowPotentiel) return true;
+                  if (p.status === "Brouillon" && projectShowBrouillon) return true;
                   if (p.status === "En cours" && projectShowEnCours) return true;
                   if (p.status === "Termin\u00e9" && projectShowTermine) return true;
                   if (p.status === "Abandonn\u00e9" && projectShowAbandonne) return true;
@@ -1729,6 +1735,18 @@ export default function App() {
                             </button>
                             <div>
                               <span style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>{p.name}</span>
+                              {p.status === "Brouillon" && (
+                                <span style={{ 
+                                  ...s.tag("#FF9800"), 
+                                  marginLeft: 8, 
+                                  background: "#FFF3E0", 
+                                  color: "#E65100", 
+                                  border: "1px solid #FFB74D",
+                                  fontWeight: 600
+                                }}>
+                                  📝 BROUILLON
+                                </span>
+                              )}
                               <span style={{ ...s.tag(deptColor), marginLeft: 8 }}>{getDeptIcon(p.dept)} {DEPTS.find(d => d.id === p.dept)?.label}</span>
                             </div>
                           </div>

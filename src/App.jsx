@@ -1240,6 +1240,295 @@ export default function App() {
     printWindow.focus();
   };
 
+  const printDashboard = () => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    
+    // Get current filters
+    const deptLabel = deptFilter === "all" ? "TOUS DÉPARTEMENTS" : DEPTS.find(d => d.id === deptFilter)?.label.toUpperCase();
+    
+    // Calculate all the stats (same as dashboard)
+    const fp = deptFilter === "all" ? projects : projects.filter(p => p.dept === deptFilter);
+    const ft = filteredTasks.filter(t => t.status !== "Abandonné");
+    const ftAll = filteredTasks;
+    const done = ft.filter(t => t.status === "Terminé").length;
+    const inProgress = ft.filter(t => t.status === "En cours").length;
+    const todo = ft.filter(t => t.status === "À faire").length;
+    const abandoned = ftAll.filter(t => t.status === "Abandonné").length;
+    const overdue = ft.filter(t => isOverdue(t.due) && t.status !== "Terminé").length;
+    const completion = ft.length ? Math.round((done / ft.length) * 100) : 0;
+    
+    // Satisfaction score
+    const tempNotes = journal.filter(j => j.type === "📝 Note" && typeof j.temp === 'number');
+    const avgScore = tempNotes.length ? (tempNotes.reduce((s, j) => s + j.temp, 0) / tempNotes.length) : null;
+    const avgScoreRounded = avgScore !== null ? Math.round(avgScore * 10) / 10 : null;
+    const avgScoreEmoji = avgScore !== null ? (TEMPS.find(t => t.score === Math.round(avgScore))?.emoji || "😐") : "❓";
+    
+    const printWindow = window.open('', '_blank');
+    
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Système Performance</title>
+  <style>
+    @media print {
+      @page { margin: 1.5cm; size: A4 landscape; }
+      body { margin: 0; }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #222;
+      background: #fff;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 3px solid #5b4ef8;
+      padding-bottom: 15px;
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 24pt;
+      color: #5b4ef8;
+    }
+    .header .subtitle {
+      font-size: 14pt;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .header .meta {
+      font-size: 10pt;
+      color: #aaa;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .kpi-card {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+    .kpi-value {
+      font-size: 32pt;
+      font-weight: 800;
+      color: #5b4ef8;
+      margin: 5px 0;
+    }
+    .kpi-label {
+      font-size: 10pt;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .section {
+      margin-bottom: 25px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 14pt;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #333;
+      border-left: 4px solid #5b4ef8;
+      padding-left: 10px;
+    }
+    .chart-placeholder {
+      background: #f5f5f5;
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      color: #999;
+      font-style: italic;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f5f5f5;
+      font-weight: 600;
+      font-size: 10pt;
+      color: #666;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+      text-align: center;
+      font-size: 9pt;
+      color: #aaa;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media print {
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>⚡ Système Performance - Dashboard</h1>
+    <div class="subtitle">${deptLabel}</div>
+    <div class="meta">Généré le ${dateStr} à ${timeStr}</div>
+  </div>
+  
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi-card">
+      <div class="kpi-value">${avgScoreEmoji}</div>
+      <div class="kpi-value">${avgScoreRounded !== null ? avgScoreRounded + '/10' : '-'}</div>
+      <div class="kpi-label">Satisfaction</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${completion}%</div>
+      <div class="kpi-label">Complétion</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${done}</div>
+      <div class="kpi-label">Tâches terminées</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${inProgress}</div>
+      <div class="kpi-label">En cours</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${todo}</div>
+      <div class="kpi-label">À faire</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value">${overdue}</div>
+      <div class="kpi-label">En retard</div>
+    </div>
+  </div>
+  
+  <!-- Projects Summary -->
+  <div class="section">
+    <div class="section-title">📁 Projets (${fp.length})</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Département</th>
+          <th>Statut</th>
+          <th>Tâches</th>
+          <th>Heures</th>
+        </tr>
+      </thead>
+      <tbody>
+`;
+    
+    fp.forEach(p => {
+      const pTasks = tasks.filter(t => t.project === p.id);
+      const deptInfo = DEPTS.find(d => d.id === p.dept);
+      html += `
+        <tr>
+          <td>${p.focus ? '🔥 ' : ''}${p.name}</td>
+          <td>${deptInfo ? deptInfo.icon + ' ' + deptInfo.label : p.dept || '-'}</td>
+          <td>${p.status || '-'}</td>
+          <td>${pTasks.length}</td>
+          <td>${p.estHours || 0}h</td>
+        </tr>
+      `;
+    });
+    
+    html += `
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Tasks by Department -->
+  <div class="section">
+    <div class="section-title">📋 Tâches par département</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Département</th>
+          <th>Terminé</th>
+          <th>En cours</th>
+          <th>À faire</th>
+          <th>Abandonné</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+`;
+    
+    DEPTS.forEach(d => {
+      const dt = filteredTasks.filter(t => t.dept === d.id);
+      const dDone = dt.filter(t => t.status === "Terminé").length;
+      const dInProgress = dt.filter(t => t.status === "En cours").length;
+      const dTodo = dt.filter(t => t.status === "À faire").length;
+      const dAbandoned = dt.filter(t => t.status === "Abandonné").length;
+      const dTotal = dt.length;
+      
+      html += `
+        <tr>
+          <td>${d.icon} ${d.label}</td>
+          <td>${dDone}</td>
+          <td>${dInProgress}</td>
+          <td>${dTodo}</td>
+          <td>${dAbandoned}</td>
+          <td><strong>${dTotal}</strong></td>
+        </tr>
+      `;
+    });
+    
+    html += `
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Charts Note -->
+  <div class="section">
+    <div class="section-title">📈 Graphiques</div>
+    <div class="chart-placeholder">
+      Les graphiques interactifs ne peuvent pas être exportés en PDF.<br>
+      Consultez le dashboard en ligne pour visualiser les tendances et statistiques.<br>
+      <br>
+      <em>Astuce: Utilisez l'outil de capture d'écran de votre navigateur pour capturer les graphiques visuellement.</em>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <div class="footer">
+    <div style="font-weight: 600; margin-bottom: 4px;">⚡ Système Performance</div>
+    <div>Imprimé le ${dateStr} à ${timeStr}</div>
+    <div style="margin-top: 4px;">Filtre: ${deptLabel}</div>
+  </div>
+  
+  <div class="no-print" style="margin-top: 30px; text-align: center;">
+    <button onclick="window.print()" style="padding: 12px 24px; background: #5b4ef8; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600;">🖨️ Imprimer / Sauvegarder en PDF</button>
+  </div>
+</body>
+</html>
+`;
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+  };
+
   const s = {
     app: { minHeight: "100vh", background: "#f5f5f5", color: "#222", fontFamily: "sans-serif", fontSize: 14 },
     header: { borderBottom: "1px solid #eee", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff", position: "sticky", top: 0, zIndex: 100 },
@@ -2576,8 +2865,9 @@ export default function App() {
 
           return (
             <div>
-              <div style={s.sectionTitle}>
+              <div style={{ ...s.sectionTitle, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span>DASHBOARD - {deptFilter === "all" ? "TOUS DÉPARTEMENTS" : DEPTS.find(d => d.id === deptFilter)?.label.toUpperCase()}</span>
+                <button style={s.btn("ghost")} onClick={printDashboard}>🖨️ Exporter PDF</button>
               </div>
 
               {/* Row 0: Satisfaction Score - compact */}

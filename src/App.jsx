@@ -3028,7 +3028,7 @@ export default function App() {
                       <div style={{ ...chartCard, marginBottom: 16 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={chartTitle}>📊 2.1. Fréquence des saisies</div>
+                            <div style={chartTitle}>📊 2.1. Fréquence des saisies journal (notes)</div>
                             <div style={{ display: "flex", gap: 4 }}>
                               {[["daily", "Jour"], ["weekly", "Sem"], ["monthly", "Mois"]].map(([k, l]) => (
                                 <button key={k} style={toggleStyle(freqPeriod === k)} onClick={() => setFreqPeriod(k)}>{l}</button>

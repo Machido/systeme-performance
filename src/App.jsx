@@ -415,7 +415,14 @@ export default function App() {
   const syncRecord = async (table, record) => {
     try {
       console.log(`🟢 syncRecord START - ${table}:`, { id: record.id, status: record.status });
-      const { error } = await supabase.from(table).upsert(record);
+      
+      // WORKAROUND: Remove abandonedReason to avoid schema cache bug
+      const cleanRecord = { ...record };
+      if (table === 'tasks') {
+        delete cleanRecord.abandonedReason;
+      }
+      
+      const { error } = await supabase.from(table).upsert(cleanRecord);
       if (error) {
         console.error(`🔴 Sync error (${table}):`, error.message);
       } else {

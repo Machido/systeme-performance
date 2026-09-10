@@ -416,12 +416,15 @@ export default function App() {
     try {
       console.log(`🟢 syncRecord START - ${table}:`, { id: record.id, status: record.status });
       
-      // WORKAROUND: Remove abandonedReason to avoid schema cache bug (tasks only)
+      // WORKAROUND: Remove abandonedReason to avoid schema cache bug
       const cleanRecord = { ...record };
       if (table === 'tasks') {
         delete cleanRecord.abandonedReason;
       }
-      // Projects: abandonedDate + abandonedReason now work after Supabase schema fix!
+      if (table === 'projects') {
+        // Keep abandonedDate for Dashboard graph, but remove abandonedReason (cache bug)
+        delete cleanRecord.abandonReason;
+      }
       
       const { error } = await supabase.from(table).upsert(cleanRecord);
       if (error) {

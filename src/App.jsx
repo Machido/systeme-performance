@@ -423,6 +423,7 @@ export default function App() {
       }
       if (table === 'projects') {
         delete cleanRecord.abandonedDate;
+        delete cleanRecord.abandonReason;
       }
       
       const { error } = await supabase.from(table).upsert(cleanRecord);

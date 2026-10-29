@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { supabase } from "./supabase.js";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar, LineChart, Line, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts";
 import JSZip from "jszip";
@@ -369,47 +369,80 @@ export default function App() {
     load();
   }, []);
 
-  // Auto-open task from URL (?openTask=T123...)
-  useEffect(() => {
-    if (!storageReady || tasks.length === 0) return;
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const taskId = urlParams.get('openTask');
-    
-    if (taskId) {
-      const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        // Set modal state directly
-        setShowModal('task');
-        setForm({ ...task });
-        // Clean URL without reloading
-        window.history.replaceState({}, '', window.location.pathname);
-      } else {
-        console.warn(`Task ${taskId} not found`);
-      }
-    }
-  }, [storageReady, tasks]);
+  // ── DEEP LINKS ──
+  // Open a task / project edit modal from the URL:
+  //   ?task=T123...     (alias: ?openTask=T123...)
+  //   ?project=P123...  (alias: ?openProject=P123...)
+  // Works regardless of the current view/filters (incl. completed/abandoned items).
+  // The param is stripped from the URL when the modal is closed.
+  const DEEP_LINK_PARAMS = ["task", "openTask", "project", "openProject"];
+  const deepLinkHandledRef = useRef(false);
+  const deepLinkOpenRef = useRef(false);
+  const [deepLinkError, setDeepLinkError] = useState(null);
 
-  // Auto-open project from URL (?openProject=P123...)
+  const stripDeepLinkParams = () => {
+    const url = new URL(window.location.href);
+    DEEP_LINK_PARAMS.forEach(k => url.searchParams.delete(k));
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  };
+
   useEffect(() => {
-    if (!storageReady || projects.length === 0) return;
-    
+    if (!storageReady || deepLinkHandledRef.current) return;
+    deepLinkHandledRef.current = true;
+
     const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('openProject');
-    
-    if (projectId) {
-      const project = projects.find(p => p.id === projectId);
-      if (project) {
-        // Set modal state directly
-        setShowModal('project');
-        setForm({ ...project });
-        // Clean URL without reloading
-        window.history.replaceState({}, '', window.location.pathname);
-      } else {
-        console.warn(`Project ${projectId} not found`);
+    const taskId = (urlParams.get("task") || urlParams.get("openTask") || "").trim();
+    const projectId = (urlParams.get("project") || urlParams.get("openProject") || "").trim();
+    if (!taskId && !projectId) return;
+
+    const kind = taskId ? "task" : "project";
+    const id = taskId || projectId;
+    const table = taskId ? "tasks" : "projects";
+    const list = taskId ? tasks : projects;
+
+    const openRecord = (record) => {
+      deepLinkOpenRef.current = true;
+      setForm({ ...record });
+      setShowModal(kind);
+    };
+
+    const local = list.find(x => x.id === id);
+    if (local) { openRecord(local); return; }
+
+    // Not in the loaded list (e.g. beyond row limit): fetch it directly
+    (async () => {
+      try {
+        const { data, error } = await supabase.from(table).select("*").eq("id", id).maybeSingle();
+        if (error) throw error;
+        if (data) {
+          if (taskId) setTasks(prev => prev.some(x => x.id === data.id) ? prev : [...prev, data]);
+          else setProjects(prev => prev.some(x => x.id === data.id) ? prev : [...prev, data]);
+          openRecord(data);
+          return;
+        }
+      } catch (e) {
+        console.warn(`Deep link lookup failed (${table} ${id}):`, e);
       }
+      console.warn(`${kind === "task" ? "Task" : "Project"} ${id} not found`);
+      setDeepLinkError(`${kind === "task" ? "Tâche" : "Projet"} introuvable : ${id}`);
+      stripDeepLinkParams();
+    })();
+  }, [storageReady, tasks, projects]);
+
+  // Strip the deep-link param once the deep-linked modal is closed
+  useEffect(() => {
+    if (!showModal && deepLinkOpenRef.current) {
+      deepLinkOpenRef.current = false;
+      stripDeepLinkParams();
     }
-  }, [storageReady, projects]);
+  }, [showModal]);
+
+  // Auto-hide the "not found" message
+  useEffect(() => {
+    if (!deepLinkError) return;
+    const t = setTimeout(() => setDeepLinkError(null), 6000);
+    return () => clearTimeout(t);
+  }, [deepLinkError]);
 
   // ── SYNC helpers ──
   const syncRecord = async (table, record) => {
@@ -4379,6 +4412,12 @@ export default function App() {
           );
         })()}
       </div>
+
+      {deepLinkError && (
+        <div onClick={() => setDeepLinkError(null)} style={{ position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 2000, background: "#fff3f3", color: "#b33", border: "1px solid #f0c0c0", borderRadius: 8, padding: "8px 14px", fontSize: 13, boxShadow: "0 2px 8px rgba(0,0,0,0.12)", cursor: "pointer" }}>
+          ⚠️ {deepLinkError}
+        </div>
+      )}
 
       {/* ── MODAL ── */}
       {showModal && (

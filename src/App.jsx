@@ -6,8 +6,11 @@ import JSZip from "jszip";
 const DEPTS = [
   { id: "ops", label: "Opérations", icon: "⚙️", color: "#4A90D9" },
   { id: "sales", label: "Revenu", icon: "💰", color: "#E8A838" },
-  { id: "prod", label: "Friends & Family", icon: "👥", color: "#6BBF6B" },
-  { id: "res", label: "Santé & Bien-être", icon: "🌿", color: "#B07FE8" },
+  { id: "sante", label: "Santé & Bien-être", icon: "🌿", color: "#2EB398" },
+  { id: "famille", label: "Famille & Amis", icon: "👥", color: "#E8719A" },
+  { id: "creation", label: "Création & Réparation", icon: "🔧", color: "#E8793A" },
+  { id: "prod", label: "Production", icon: "🏭", color: "#6BBF6B" },
+  { id: "res", label: "Résilience", icon: "🌱", color: "#B07FE8" },
 ];
 
 const STATUSES = ["À faire", "En cours", "Terminé", "Abandonné"];
@@ -956,7 +959,7 @@ export default function App() {
   // Helper to sort projects for dropdowns: Focus → En cours → Potentiel → Terminé → Abandonné
   const getSortedProjects = () => {
     const statusOrder = { "En cours": 1, "Potentiel": 2, "Terminé": 3, "Abandonné": 4 };
-    const deptOrder = { "ops": 1, "sales": 2, "prod": 3, "res": 4 };
+    const deptOrder = { "ops": 1, "sales": 2, "sante": 3, "famille": 4, "creation": 5, "prod": 6, "res": 7 };
     return projects
       .filter(p => p.status !== "Abandonné" && p.status !== "Terminé") // Exclude completed/abandoned
       .sort((a, b) => {

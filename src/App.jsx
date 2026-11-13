@@ -646,7 +646,7 @@ export default function App() {
     const dd = String(now.getDate()).padStart(2, '0');
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const yy = String(now.getFullYear()).slice(-2);
-    const folderName = `Sysperf_data_backup_${dd}-${mm}-${yy}`;
+    const folderName = `ShiftKey_data_backup_${dd}-${mm}-${yy}`;
     
     const tables = [
       { name: "projects", data: projects },
@@ -1274,7 +1274,7 @@ export default function App() {
 
     html += `
   <div class="footer">
-    <div style="font-weight: 600; margin-bottom: 4px;">Système Performance</div>
+    <div style="font-weight: 600; margin-bottom: 4px;">Shift Key</div>
     <div>Imprimé le ${dateStr} à ${timeStr}</div>
     <div style="margin-top: 4px; font-style: italic;">Filtre: ${filterStr}</div>
   </div>
@@ -1319,7 +1319,7 @@ export default function App() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard - Système Performance</title>
+  <title>Dashboard - Shift Key</title>
   <style>
     @media print {
       @page { margin: 1.5cm; size: A4 landscape; }
@@ -1435,7 +1435,7 @@ export default function App() {
 </head>
 <body>
   <div class="header">
-    <h1>⚡ Système Performance - Dashboard</h1>
+    <h1>⚡ Shift Key - Dashboard</h1>
     <div class="subtitle">${deptLabel}</div>
     <div class="meta">Généré le ${dateStr} à ${timeStr}</div>
   </div>
@@ -1559,7 +1559,7 @@ export default function App() {
   
   <!-- Footer -->
   <div class="footer">
-    <div style="font-weight: 600; margin-bottom: 4px;">⚡ Système Performance</div>
+    <div style="font-weight: 600; margin-bottom: 4px;">⚡ Shift Key</div>
     <div>Imprimé le ${dateStr} à ${timeStr}</div>
     <div style="margin-top: 4px;">Filtre: ${deptLabel}</div>
   </div>
@@ -1622,7 +1622,7 @@ export default function App() {
     <div style={s.app}>
       {/* Header */}
       <div style={s.header}>
-        <div style={s.logo}>⚡ Système Performance</div>
+        <div style={s.logo}>⚡ Shift Key</div>
         <div style={s.deptBar}>
           <button style={s.deptBtn(deptFilter === "all")} onClick={() => setDeptFilter("all")}>TOUS</button>
           {DEPTS.map(d => (

@@ -1,7 +1,7 @@
 # Habit Tracker Setup Guide
 
 ## 📋 Overview
-The habit tracker feature has been successfully implemented in Système Performance. This guide will help you complete the setup.
+The habit tracker feature has been successfully implemented in Shift Key. This guide will help you complete the setup.
 
 ## ✅ Completed
 - [x] Database migration file created: `migration-habits-2026-04-07.sql`

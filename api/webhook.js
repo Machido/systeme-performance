@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     // ── Commands ──
     if (userText === '/start') {
       await sendMessage(chatId,
-        `👋 *Bonjour Martin !*\n\nJe suis ton assistant Système Performance.\n\nJe peux créer et consulter :\n• ✅ Tâches\n• 📝 Entrées journal (notes, idées, obstacles)\n• 📁 Projets\n• 🎯 Objectifs\n• 📊 KPIs\n\nCommandes rapides :\n/taches — tâches de demain\n/retards — tâches en retard\n/projets — projets actifs\n/journal — dernières entrées\n\nOu dis-moi simplement ce dont tu as besoin !`
+        `👋 *Bonjour Martin !*\n\nJe suis ton assistant Shift Key.\n\nJe peux créer et consulter :\n• ✅ Tâches\n• 📝 Entrées journal (notes, idées, obstacles)\n• 📁 Projets\n• 🎯 Objectifs\n• 📊 KPIs\n\nCommandes rapides :\n/taches — tâches de demain\n/retards — tâches en retard\n/projets — projets actifs\n/journal — dernières entrées\n\nOu dis-moi simplement ce dont tu as besoin !`
       );
       return res.status(200).json({ ok: true });
     }

@@ -1,4 +1,4 @@
-# ⚡ Système Performance
+# ⚡ Shift Key
 
 App de suivi de performance personnelle — projets, tâches, journal, objectifs & KPIs.
 
